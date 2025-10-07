@@ -101,17 +101,17 @@ export default function ChildProfile() {
         <ScrollView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.greeting}>Create Child Profile</Text>
-                <Text style={styles.subtitle}>Add your child's information</Text>
+                <Text style={styles.greeting}>Création du profile Enfant</Text>
+                <Text style={styles.subtitle}>Ajoutez les informations de votre enfant</Text>
             </View>
 
             {/* Formulaire */}
             <View style={styles.formContainer}>
                 {/* Prénom de l'enfant */}
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Child's First Name *</Text>
+                    <Text style={styles.label}>Prénom de l'enfant *</Text>
                     <TextInput 
-                        placeholder="Enter first name"
+                        placeholder="Entrez le prénom"
                         placeholderTextColor="#999"
                         style={[
                             styles.input,
@@ -130,9 +130,9 @@ export default function ChildProfile() {
 
                 {/* Nom de famille */}
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Child's Last Name *</Text>
+                    <Text style={styles.label}>Nom de l'enfant *</Text>
                     <TextInput 
-                        placeholder="Enter last name"
+                        placeholder="Entrez le nom"
                         placeholderTextColor="#999"
                         style={[
                             styles.input,
@@ -144,14 +144,14 @@ export default function ChildProfile() {
                     />
                     {lastName && !validateName(lastName) && (
                         <Text style={styles.errorText}>
-                            Nom invalide. Utilisez seulement des lettres (2-50 caractères).
+                            Nom invalide. Utilisez seulement des lettres (2-20 caractères).
                         </Text>
                     )}
                 </View>
 
                 {/* Date de naissance */}
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Date of Birth *</Text>
+                    <Text style={styles.label}>Date de naissance *</Text>
                     <TouchableOpacity onPress={showDatePickerModal}>
                         <View style={styles.dateInput}>
                             <Text style={[
@@ -177,7 +177,7 @@ export default function ChildProfile() {
 
                 {/* Genre */}
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Gender *</Text>
+                    <Text style={styles.label}>Genre *</Text>
                     <View style={styles.genderContainer}>
                         <TouchableOpacity 
                             style={[
@@ -190,7 +190,7 @@ export default function ChildProfile() {
                                 styles.genderText,
                                 selectedGender === "male" && styles.genderTextSelected
                             ]}>
-                                Male
+                                Garçon
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
@@ -204,7 +204,7 @@ export default function ChildProfile() {
                                 styles.genderText,
                                 selectedGender === "female" && styles.genderTextSelected
                             ]}>
-                                Female
+                                Fille
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
@@ -218,7 +218,7 @@ export default function ChildProfile() {
                                 styles.genderText,
                                 selectedGender === "other" && styles.genderTextSelected
                             ]}>
-                                Other
+                                Autre
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -229,12 +229,12 @@ export default function ChildProfile() {
                     style={styles.createButton}
                     onPress={handleSubmit}
                 >
-                    <Text style={styles.createButtonText}>Create Profile</Text>
+                    <Text style={styles.createButtonText}>Créer le profil</Text>
                 </TouchableOpacity>
 
                 {/* Lien retour */}
                 <Link href="/" style={styles.cancelLink}>
-                    <Text style={styles.cancelText}>Cancel</Text>
+                    <Text style={styles.cancelText}>Annuler</Text>
                 </Link>
             </View>
         </ScrollView>
