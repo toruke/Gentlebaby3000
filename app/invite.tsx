@@ -21,8 +21,8 @@ const InviteToGroupScreen = () => {
   const mockUsers = [
     {
       id: "1",
-      name: "Marie Dubois",
-      username: "@marie_d",
+      name: "Marie-Noël VROMAN",
+      username: "@marie_N",
       avatar: "https://i.pravatar.cc/150?img=1",
     },
     {

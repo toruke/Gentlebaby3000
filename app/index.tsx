@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { Link } from "expo-router";
 
 export default function Index() {
@@ -11,6 +11,7 @@ export default function Index() {
       }}
     >
       <Link href="/invite">About</Link>
+      <Link href="/inviteFamilyScreen">Invite</Link>
     </View>
   );
 }
