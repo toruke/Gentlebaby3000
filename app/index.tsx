@@ -10,7 +10,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-     <Link href="/tutorRegistration"> Vers formulaire enfant</Link>
+     <Link href="/tutorRegistration"> inscription tuteur</Link>
     </View>
   );
 }
