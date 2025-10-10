@@ -1,17 +1,17 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
+  Alert,
   FlatList,
   Image,
   SafeAreaView,
   StatusBar,
-  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
 const InviteToGroupScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");

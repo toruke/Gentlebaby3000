@@ -1,5 +1,7 @@
-import { View } from "react-native";
+import { Button } from "@react-navigation/elements";
 import { Link } from "expo-router";
+import React from 'react';
+import { View } from "react-native";
 
 export default function Index() {
   return (
@@ -10,8 +12,21 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <Link href="/invite">About</Link>
-      <Link href="/inviteFamilyScreen">Invite</Link>
+      <Link href="/inviteGeneral" asChild>
+        <Button>InviteGeneral</Button>
+      </Link>
+
+      <View style={{ height: 40}}/>
+
+      <Link href="/inviteFamilyScreen" asChild>
+        <Button>Demo prof</Button>
+      </Link>
+
+      <View style={{ height: 20 }} />
+
+      <Link href="/invite" asChild>
+        <Button>Demo prof 2</Button>
+      </Link>
     </View>
   );
 }
