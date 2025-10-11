@@ -45,7 +45,7 @@ module.exports = defineConfig([
     },
   },
 
-  // Configuration TypeScript (seulement si TypeScript est installé)
+  // Configuration TypeScript 
   ...(function() {
     try {
       const tseslint = require('@typescript-eslint/eslint-plugin');
