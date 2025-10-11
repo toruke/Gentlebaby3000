@@ -63,3 +63,17 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## 📂 Structure Firestore
+
+- `/users/{userId}`
+  - Contient les profils utilisateurs
+- `/families/{familyId}`
+  - Infos sur une famille
+  - `/members/{userId}` → membres de la famille
+  - `/children/{childId}` → enfants
+  - `/tasks/{taskId}` → tâches
+- `/notifications/{notifId}`
+  - Notifications envoyées aux utilisateurs
+
+---
