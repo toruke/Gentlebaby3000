@@ -37,6 +37,19 @@ npm run reset-project
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
+
+## Linter Guide
+
+```bash
+# Vérification manuelle
+npm run lint
+
+# Correction automatique
+npm run lint:fix
+
+# Mode watch (développement)
+npm run lint:watch
+```
 ## Learn more
 
 To learn more about developing your project with Expo, look at the following resources:
