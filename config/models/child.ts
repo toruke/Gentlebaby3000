@@ -1,6 +1,8 @@
 export type Child = {
     childId: string;
-    name: string;
+    firstName: string;
+    lastName: string;
+    gender: 'male' | 'female' | 'other';
     birthday: Date;
 };
 
