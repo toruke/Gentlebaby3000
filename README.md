@@ -37,6 +37,19 @@ npm run reset-project
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
+
+## Linter Guide
+
+```bash
+# Vérification manuelle
+npm run lint
+
+# Correction automatique
+npm run lint:fix
+
+# Mode watch (développement)
+npm run lint:watch
+```
 ## Learn more
 
 To learn more about developing your project with Expo, look at the following resources:
@@ -50,3 +63,17 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## 📂 Structure Firestore
+
+- `/users/{userId}`
+  - Contient les profils utilisateurs
+- `/families/{familyId}`
+  - Infos sur une famille
+  - `/members/{userId}` → membres de la famille
+  - `/children/{childId}` → enfants
+  - `/tasks/{taskId}` → tâches
+- `/notifications/{notifId}`
+  - Notifications envoyées aux utilisateurs
+
+---
