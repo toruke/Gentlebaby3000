@@ -17,6 +17,7 @@ export const useEditProfile = (user: User, onClose: () => void) => {
       mail_address: editMailAddress,
       password: editPassword,
     };
+    // eslint-disable-next-line no-console
     console.log(updateUser);
     onClose();
   };
