@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { EditProfileScreen } from './screens/EditProfileScreen';
 
 export default function Index() {
   return (
@@ -10,6 +11,7 @@ export default function Index() {
       }}
     >
       <Text>caca</Text>
+      <EditProfileScreen></EditProfileScreen>
     </View>
   );
 }
