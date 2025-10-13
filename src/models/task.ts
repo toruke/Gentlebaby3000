@@ -2,7 +2,7 @@ export type Task = {
     taskId: string;
     name: string;
     icon: string;
-    type: "Event" | "Ponctual" | "Recurrent";
+    type: 'Event' | 'Ponctual' | 'Recurrent';
     active: boolean;
     status: string;
     tolerance: number;
