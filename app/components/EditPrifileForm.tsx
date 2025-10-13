@@ -1,23 +1,23 @@
 import React from 'react';
-import { Button, StyleSheet, TextInput, View } from 'react-native';
+import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 
 
 import { useEditProfile } from '../hooks/useEditProfile';
 import { User } from '../models/user';
 
 interface EditProfilFormProps {
-    user: User;
-    onClose(): void;
+  user: User;
+  onClose(): void;
 }
 const EditProfilForm: React.FC<EditProfilFormProps> = ({ user, onClose }) => {
-  const { onSubmit, editFirstname, editLastname, editMailAddress, editPassword, setEditFistname, setEditLastname, setEditMailAddress, setEditPassword } = useEditProfile(user, onClose);
+  const { onSubmit, onSubmitPassword, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setCurrentPassword, setNewPassword, setConfirmPassword, setStep, error } = useEditProfile(user, onClose);
 
   return (
     <View>
       <TextInput
         style={styles.textInput}
         placeholder={user.firstname}
-        onChangeText={(text) => { setEditFistname(text); }}
+        onChangeText={(text) => { setEditFirstname(text); }}
         value={editFirstname}
       />
       <TextInput
@@ -32,13 +32,52 @@ const EditProfilForm: React.FC<EditProfilFormProps> = ({ user, onClose }) => {
         onChangeText={(text) => { setEditMailAddress(text); }}
         value={editMailAddress}
       />
-      <TextInput
-        style={styles.textInput}
-        placeholder={user.password}
-        onChangeText={(text) => { setEditPassword(text); }}
-        value={editPassword}
-      />
-      <Button title="Submit" onPress={onSubmit} />
+
+      {step === 'verify' &&
+        (<>
+          <TextInput
+            style={styles.textInput}
+            placeholder='Mot de passe actuel'
+            secureTextEntry={true}
+            autoCorrect={false}
+            onChangeText={(text) => { setCurrentPassword(text); }}
+            value={currentPassword} />
+          <Button title="Vérification" onPress={onSubmitPassword} />
+        </>)
+      }
+      {step === 'ready' &&
+        (<>
+          <View style={{ marginVertical: 10 }}>
+            <Button title="Modification mot de passe" onPress={() => { setStep('change'); }} />
+          </View>
+
+        </>
+        )}
+
+      {step === 'change' &&
+        (<>
+          <TextInput
+            style={styles.textInput}
+            placeholder='Nouveau mot de passe'
+            secureTextEntry={true}
+            autoCorrect={false}
+            onChangeText={(text) => { setNewPassword(text); }}
+            value={newPassword} />
+          <TextInput
+            style={styles.textInput}
+            placeholder='Confirmation nouveau mot de passe'
+            secureTextEntry={true}
+            autoCorrect={false}
+            onChangeText={(text) => { setConfirmPassword(text); }}
+            value={confirmPassword} />
+        </>)
+      }
+      {error.length > 0 &&
+        (<Text style={styles.text}>{error}</Text>)
+      }
+      <View style={{ marginVertical: 10 }}>
+        <Button title="Submit" onPress={onSubmit} />
+      </View>
     </View>
   );
 };
@@ -48,6 +87,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     borderWidth: 2,
     margin: 10,
+  },
+  text: {
+    fontSize: 18,
+    color: 'red',
+    margin: 10,
+    fontWeight: 'bold',
   },
 });
 
