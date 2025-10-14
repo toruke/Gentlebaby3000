@@ -13,13 +13,6 @@ export default function Index() {
       />
       
       <View className="h-10" />
-      
-      <Button 
-        title="Demo prof" 
-        onPress={() => router.push('/inviteFamilyScreen')} 
-      />
-      
-      <View className="h-5" />
     </View>
   );
 }
