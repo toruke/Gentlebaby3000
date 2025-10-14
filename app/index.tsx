@@ -1,7 +1,7 @@
-import { Button } from "@react-navigation/elements";
-import { Link } from "expo-router";
+import { Link } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
+import Button from '../components/Button';
 
 export default function Index() {
   return (
@@ -13,19 +13,19 @@ export default function Index() {
       }}
     >
       <Link href="/inviteGeneral" asChild>
-        <Button>InviteGeneral</Button>
+        <Button title="InviteGeneral"></Button>
       </Link>
 
-      <View style={{ height: 40}}/>
+      <View style={{ height: 40 }} />
 
       <Link href="/inviteFamilyScreen" asChild>
-        <Button>Demo prof</Button>
+        <Button title="Demo prof"></Button>
       </Link>
 
       <View style={{ height: 20 }} />
 
       <Link href="/invite" asChild>
-        <Button>Demo prof 2</Button>
+        <Button title="Demo prof 2"></Button>
       </Link>
     </View>
   );
