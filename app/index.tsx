@@ -10,13 +10,17 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>GentleBaby3000</Text>
         <Text style={styles.subtitle}>Votre application de suivi bébé</Text>
+
       </View>
-      <TouchableOpacity 
-        style={styles.testButton}
-        onPress={testFirebaseConnection}
-      >
-        <Text style={styles.testButtonText}>Test Firebase</Text> {/* 👈 Ajoutez style ici */}
-      </TouchableOpacity>
+
+      <View>
+        <TouchableOpacity 
+          style={styles.testButton}
+          onPress={testFirebaseConnection}
+        >
+          <Text style={styles.testButtonText}>Test Firebase</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.menu}>
 
