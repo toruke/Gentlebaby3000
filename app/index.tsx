@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import Button from '../components/Button';
+import Button from '../src/components/Button';
 
 export default function Index() {
   return (
