@@ -1,4 +1,3 @@
-// https://docs.expo.dev/guides/using-eslint/
 // eslint.config.js
 const { defineConfig } = require('eslint/config');
 const js = require('@eslint/js');
@@ -9,6 +8,19 @@ module.exports = defineConfig([
   // Configuration JavaScript de base
   js.configs.recommended,
 
+  // Configuration pour les fichiers de configuration
+  {
+    files: ['**/config/**', '**/*.config.js'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+      },
+    },
+    rules: {
+      'no-undef': 'off',
+    },
+  },
+
   // Configuration pour React
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
@@ -17,7 +29,7 @@ module.exports = defineConfig([
     },
     settings: {
       react: {
-        version: 'detect', // Détecte automatiquement la version de React
+        version: 'detect',
       },
     },
     rules: {
@@ -62,11 +74,12 @@ module.exports = defineConfig([
           },
           rules: {
             ...tseslint.configs.recommended.rules,
+            // Désactiver no-undef pour TypeScript car il gère déjà cela
+            'no-undef': 'off',
           },
         }
       ];
     } catch (error) {
-      // TypeScript n'est pas installé, on retourne un tableau vide
       return [];
     }
   })(),
@@ -88,7 +101,6 @@ module.exports = defineConfig([
       'comma-dangle': ['warn', 'always-multiline'],
 
       // Bonnes pratiques React/React Native
-      'react/prop-types': 'off', // Désactivé si vous utilisez TypeScript
       'react/display-name': 'error',
       'react/jsx-key': 'error',
       'react/jsx-no-duplicate-props': 'error',

@@ -1,5 +1,5 @@
-import { Text, View } from 'react-native';
-import { Link } from 'expo-router';
+import { View } from 'react-native';
+import Button from '../components/Button';
 
 export default function Home() {
   return (
@@ -10,8 +10,7 @@ export default function Home() {
         alignItems: 'center',
       }}
     >
-      <Text>Acceuil</Text>
-      <Link href="/childProfile"> Vers formulaire enfant</Link>
+      <Button title="caca" onPress={() => {}} />
     </View>
   );
 }
