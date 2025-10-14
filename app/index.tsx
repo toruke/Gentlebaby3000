@@ -19,8 +19,8 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       <View style={styles.menu}>
-        {/* 👇 BOUTON POUR CRÉER UN PROFIL ENFANT */}
-        <Link href="/child/createChild" asChild>
+
+        <Link href="./child/createChild" asChild>
           <TouchableOpacity style={styles.menuButton}>
             <Text style={styles.menuButtonText}>👶 Créer un profil enfant</Text>
             <Text style={styles.menuDescription}>
