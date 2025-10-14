@@ -1,32 +1,25 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 import Button from '../components/Button';
 
+
 export default function Index() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <Link href="/inviteGeneral" asChild>
-        <Button title="InviteGeneral"></Button>
-      </Link>
-
-      <View style={{ height: 40 }} />
-
-      <Link href="/inviteFamilyScreen" asChild>
-        <Button title="Demo prof"></Button>
-      </Link>
-
-      <View style={{ height: 20 }} />
-
-      <Link href="/invite" asChild>
-        <Button title="Demo prof 2"></Button>
-      </Link>
+    <View className="flex-1 justify-center items-center">
+      <Button 
+        title="InviteGeneral" 
+        onPress={() => router.push('/invite')} 
+      />
+      
+      <View className="h-10" />
+      
+      <Button 
+        title="Demo prof" 
+        onPress={() => router.push('/inviteFamilyScreen')} 
+      />
+      
+      <View className="h-5" />
     </View>
   );
 }

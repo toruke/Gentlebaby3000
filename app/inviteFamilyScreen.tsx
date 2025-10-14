@@ -1,12 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,34 +12,35 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const InviteFamilyScreen = () => {
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState("parent"); // parent, proche, nourrice
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState('parent'); // parent, proche, nourrice
   const [isLoading, setIsLoading] = useState(false);
   const [invitedMembers, setInvitedMembers] = useState([
     {
-      id: "1",
-      email: "marie.dupont@email.com",
-      name: "Marie Dupont",
-      role: "Parent",
-      status: "pending",
-      invitedAt: "Il y a 2 jours",
+      id: '1',
+      email: 'marie.dupont@email.com',
+      name: 'Marie Dupont',
+      role: 'Parent',
+      status: 'pending',
+      invitedAt: 'Il y a 2 jours',
     },
     {
-      id: "2",
-      email: "jean.martin@email.com",
-      name: "Jean Martin",
-      role: "Proche",
-      status: "accepted",
-      invitedAt: "Il y a 5 jours",
+      id: '2',
+      email: 'jean.martin@email.com',
+      name: 'Jean Martin',
+      role: 'Proche',
+      status: 'accepted',
+      invitedAt: 'Il y a 5 jours',
     },
-  ]
+  ],
 
-);
+  );
 
   // Validation email
   const isValidEmail = (email: string) => {
@@ -53,17 +52,17 @@ const InviteFamilyScreen = () => {
   const handleSendInvitation = async () => {
     // Validation
     if (!email.trim()) {
-      Alert.alert("Erreur", "Veuillez saisir une adresse email");
+      Alert.alert('Erreur', 'Veuillez saisir une adresse email');
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert("Erreur", "Veuillez saisir une adresse email valide");
+      Alert.alert('Erreur', 'Veuillez saisir une adresse email valide');
       return;
     }
 
     if (!firstName.trim() || !lastName.trim()) {
-      Alert.alert("Erreur", "Veuillez saisir le nom et prénom");
+      Alert.alert('Erreur', 'Veuillez saisir le nom et prénom');
       return;
     }
 
@@ -79,29 +78,29 @@ const InviteFamilyScreen = () => {
         email: email.trim(),
         name: `${firstName.trim()} ${lastName.trim()}`,
         role:
-          role === "parent"
-            ? "Parent"
-            : role === "proche"
-              ? "Proche"
-              : "Nourrice",
-        status: "pending",
-        invitedAt: "À l'instant",
+          role === 'parent'
+            ? 'Parent'
+            : role === 'proche'
+              ? 'Proche'
+              : 'Nourrice',
+        status: 'pending',
+        invitedAt: 'À l\'instant',
       };
 
       setInvitedMembers([newInvitation, ...invitedMembers]);
 
       Alert.alert(
-        "✅ Invitation envoyée",
+        '✅ Invitation envoyée',
         `Une invitation a été envoyée à ${email}`,
         [
           {
-            text: "OK",
+            text: 'OK',
             onPress: () => {
               // Réinitialiser le formulaire
-              setEmail("");
-              setFirstName("");
-              setLastName("");
-              setRole("parent");
+              setEmail('');
+              setFirstName('');
+              setLastName('');
+              setRole('parent');
             },
           },
         ],
@@ -112,18 +111,18 @@ const InviteFamilyScreen = () => {
   // Annuler une invitation
   const handleCancelInvitation = (invitationId: string, memberName: string) => {
     Alert.alert(
-      "Annuler l'invitation",
+      'Annuler l\'invitation',
       `Voulez-vous vraiment annuler l'invitation de ${memberName} ?`,
       [
-        { text: "Non", style: "cancel" },
+        { text: 'Non', style: 'cancel' },
         {
-          text: "Oui, annuler",
-          style: "destructive",
+          text: 'Oui, annuler',
+          style: 'destructive',
           onPress: () => {
             setInvitedMembers(
               invitedMembers.filter((member) => member.id !== invitationId),
             );
-            Alert.alert("✅", "Invitation annulée");
+            Alert.alert('✅', 'Invitation annulée');
           },
         },
       ],
@@ -132,27 +131,16 @@ const InviteFamilyScreen = () => {
 
   // Renvoyer une invitation
   const handleResendInvitation = (email: string) => {
-    Alert.alert("✅", `Invitation renvoyée à ${email}`);
+    Alert.alert('✅', `Invitation renvoyée à ${email}`);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Inviter à la famille</Text>
-        <View style={styles.placeholder} />
-      </View>
-
+      
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}
       >
         <ScrollView
@@ -248,19 +236,19 @@ const InviteFamilyScreen = () => {
                 <TouchableOpacity
                   style={[
                     styles.roleButton,
-                    role === "parent" && styles.roleButtonActive,
+                    role === 'parent' && styles.roleButtonActive,
                   ]}
-                  onPress={() => setRole("parent")}
+                  onPress={() => setRole('parent')}
                 >
                   <Ionicons
                     name="people"
                     size={20}
-                    color={role === "parent" ? "#fff" : "#666"}
+                    color={role === 'parent' ? '#fff' : '#666'}
                   />
                   <Text
                     style={[
                       styles.roleButtonText,
-                      role === "parent" && styles.roleButtonTextActive,
+                      role === 'parent' && styles.roleButtonTextActive,
                     ]}
                   >
                     Parent
@@ -270,19 +258,19 @@ const InviteFamilyScreen = () => {
                 <TouchableOpacity
                   style={[
                     styles.roleButton,
-                    role === "proche" && styles.roleButtonActive,
+                    role === 'proche' && styles.roleButtonActive,
                   ]}
-                  onPress={() => setRole("proche")}
+                  onPress={() => setRole('proche')}
                 >
                   <Ionicons
                     name="heart"
                     size={20}
-                    color={role === "proche" ? "#fff" : "#666"}
+                    color={role === 'proche' ? '#fff' : '#666'}
                   />
                   <Text
                     style={[
                       styles.roleButtonText,
-                      role === "proche" && styles.roleButtonTextActive,
+                      role === 'proche' && styles.roleButtonTextActive,
                     ]}
                   >
                     Proche
@@ -292,19 +280,19 @@ const InviteFamilyScreen = () => {
                 <TouchableOpacity
                   style={[
                     styles.roleButton,
-                    role === "nourrice" && styles.roleButtonActive,
+                    role === 'nourrice' && styles.roleButtonActive,
                   ]}
-                  onPress={() => setRole("nourrice")}
+                  onPress={() => setRole('nourrice')}
                 >
                   <Ionicons
                     name="medkit"
                     size={20}
-                    color={role === "nourrice" ? "#fff" : "#666"}
+                    color={role === 'nourrice' ? '#fff' : '#666'}
                   />
                   <Text
                     style={[
                       styles.roleButtonText,
-                      role === "nourrice" && styles.roleButtonTextActive,
+                      role === 'nourrice' && styles.roleButtonTextActive,
                     ]}
                   >
                     Nourrice
@@ -353,16 +341,16 @@ const InviteFamilyScreen = () => {
                     <View
                       style={[
                         styles.memberAvatar,
-                        member.status === "accepted"
+                        member.status === 'accepted'
                           ? styles.avatarAccepted
                           : styles.avatarPending,
                       ]}
                     >
                       <Ionicons
                         name={
-                          member.status === "accepted"
-                            ? "checkmark"
-                            : "time-outline"
+                          member.status === 'accepted'
+                            ? 'checkmark'
+                            : 'time-outline'
                         }
                         size={24}
                         color="#fff"
@@ -375,7 +363,7 @@ const InviteFamilyScreen = () => {
                         <View
                           style={[
                             styles.statusBadge,
-                            member.status === "accepted"
+                            member.status === 'accepted'
                               ? styles.statusAccepted
                               : styles.statusPending,
                           ]}
@@ -383,14 +371,14 @@ const InviteFamilyScreen = () => {
                           <Text
                             style={[
                               styles.statusText,
-                              member.status === "accepted"
+                              member.status === 'accepted'
                                 ? styles.statusTextAccepted
                                 : styles.statusTextPending,
                             ]}
                           >
-                            {member.status === "accepted"
-                              ? "Accepté"
-                              : "En attente"}
+                            {member.status === 'accepted'
+                              ? 'Accepté'
+                              : 'En attente'}
                           </Text>
                         </View>
                         <Text style={styles.memberRole}>• {member.role}</Text>
@@ -401,7 +389,7 @@ const InviteFamilyScreen = () => {
                     </View>
                   </View>
 
-                  {member.status === "pending" && (
+                  {member.status === 'pending' && (
                     <View style={styles.memberActions}>
                       <TouchableOpacity
                         style={styles.actionButton}
@@ -436,25 +424,25 @@ const InviteFamilyScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: '#F8F9FA',
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: '#E0E0E0',
   },
   backButton: {
     padding: 5,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
+    fontWeight: '700',
+    color: '#333',
   },
   placeholder: {
     width: 34,
@@ -467,8 +455,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   infoCard: {
-    flexDirection: "row",
-    backgroundColor: "#E3F2FD",
+    flexDirection: 'row',
+    backgroundColor: '#E3F2FD',
     padding: 15,
     borderRadius: 12,
     marginBottom: 25,
@@ -477,15 +465,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 14,
-    color: "#1976D2",
+    color: '#1976D2',
     lineHeight: 20,
   },
   formSection: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 16,
     marginBottom: 25,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -493,8 +481,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
+    fontWeight: '700',
+    color: '#333',
     marginBottom: 20,
   },
   inputGroup: {
@@ -502,19 +490,19 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 8,
   },
   required: {
-    color: "#FF3B30",
+    color: '#FF3B30',
   },
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F9FA",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: '#E0E0E0',
     borderRadius: 12,
     paddingHorizontal: 15,
     height: 50,
@@ -525,52 +513,52 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: "#333",
+    color: '#333',
   },
   roleContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 10,
   },
   roleButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F8F9FA",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8F9FA',
     borderWidth: 2,
-    borderColor: "#E0E0E0",
+    borderColor: '#E0E0E0',
     borderRadius: 12,
     paddingVertical: 12,
     gap: 6,
   },
   roleButtonActive: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
   },
   roleButtonText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#666",
+    fontWeight: '600',
+    color: '#666',
   },
   roleButtonTextActive: {
-    color: "#fff",
+    color: '#fff',
   },
   sendButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#007AFF",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 10,
-    shadowColor: "#007AFF",
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 5,
   },
   sendButtonDisabled: {
-    backgroundColor: "#ccc",
+    backgroundColor: '#ccc',
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -578,65 +566,65 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   sendButtonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   invitationsSection: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 16,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
   },
   memberCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: '#F0F0F0',
   },
   memberInfo: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   memberAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   avatarAccepted: {
-    backgroundColor: "#34C759",
+    backgroundColor: '#34C759',
   },
   avatarPending: {
-    backgroundColor: "#FF9500",
+    backgroundColor: '#FF9500',
   },
   memberDetails: {
     flex: 1,
   },
   memberName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 4,
   },
   memberEmail: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
     marginBottom: 6,
   },
   memberMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 6,
   },
   statusBadge: {
@@ -645,43 +633,43 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusAccepted: {
-    backgroundColor: "#D1F2DD",
+    backgroundColor: '#D1F2DD',
   },
   statusPending: {
-    backgroundColor: "#FFE8CC",
+    backgroundColor: '#FFE8CC',
   },
   statusText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   statusTextAccepted: {
-    color: "#28A745",
+    color: '#28A745',
   },
   statusTextPending: {
-    color: "#FF9500",
+    color: '#FF9500',
   },
   memberRole: {
     fontSize: 12,
-    color: "#666",
+    color: '#666',
   },
   memberDate: {
     fontSize: 12,
-    color: "#999",
+    color: '#999',
   },
   memberActions: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 8,
   },
   actionButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   deleteButton: {
-    backgroundColor: "#FFE5E5",
+    backgroundColor: '#FFE5E5',
   },
 });
 
