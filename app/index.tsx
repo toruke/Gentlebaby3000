@@ -1,5 +1,6 @@
-import { View } from 'react-native';
-import Button from '../components/Button';
+import { View} from 'react-native';
+import {Link} from 'expo-router';
+import Button from '../src/components/Button';
 
 export default function Home() {
   return (
@@ -11,6 +12,7 @@ export default function Home() {
       }}
     >
       <Button title="caca" onPress={() => {}} />
+      <Link href="/roleApparelManager">Gestion des rôles et des appareils</Link>
     </View>
   );
 }
