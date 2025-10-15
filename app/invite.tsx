@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,23 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
+
+
+interface Invitation {
+  id: string;
+  acceptedAt: Timestamp;
+  createdAt: Timestamp;
+  emailInvited: string;
+  expiredAt: Timestamp;
+  familyId: string;
+  roleProposed: string;
+  senderId: string;
+  status: string;
+  tokenInvitation: string;
+}
+
 
 const InviteFamilyScreen = () => {
   const [email, setEmail] = useState('');
@@ -21,24 +38,27 @@ const InviteFamilyScreen = () => {
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('parent');
   const [isLoading, setIsLoading] = useState(false);
-  const [invitedMembers, setInvitedMembers] = useState([
-    {
-      id: '1',
-      email: 'marie.dupont@email.com',
-      name: 'Marie Dupont',
-      role: 'Parent',
-      status: 'pending',
-      invitedAt: 'Il y a 2 jours',
-    },
-    {
-      id: '2',
-      email: 'jean.martin@email.com',
-      name: 'Jean Martin',
-      role: 'Proche',
-      status: 'accepted',
-      invitedAt: 'Il y a 5 jours',
-    },
-  ]);
+  const [invitedMembers, setInvitedMembers] = useState<Invitation[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, 'invitation'),
+      (querySnapshot) => {
+        const members = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Invitation[];
+
+        setInvitedMembers(members);
+      },
+      (error) => {
+        console.error('Erreur:', error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
+
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -121,7 +141,7 @@ const InviteFamilyScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle='dark-content' backgroundColor='#fff' />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -132,7 +152,7 @@ const InviteFamilyScreen = () => {
           contentContainerStyle={styles.scrollContent}
         >
           <View style={styles.infoCard}>
-            <Ionicons name="information-circle" size={24} color="#007AFF" />
+            <Ionicons name='information-circle' size={24} color='#007AFF' />
             <Text style={styles.infoText}>
               Invitez des membres de votre famille pour partager la garde de
               bébé et l'accès à l'application.
@@ -148,20 +168,20 @@ const InviteFamilyScreen = () => {
               </Text>
               <View style={styles.inputContainer}>
                 <Ionicons
-                  name="mail-outline"
+                  name='mail-outline'
                   size={20}
-                  color="#666"
+                  color='#666'
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="exemple@email.com"
+                  placeholder='exemple@email.com'
                   value={email}
                   onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
+                  keyboardType='email-address'
+                  autoCapitalize='none'
                   autoCorrect={false}
-                  placeholderTextColor="#999"
+                  placeholderTextColor='#999'
                 />
               </View>
             </View>
@@ -177,7 +197,7 @@ const InviteFamilyScreen = () => {
                   onPress={() => setRole('parent')}
                 >
                   <Ionicons
-                    name="people"
+                    name='people'
                     size={20}
                     color={role === 'parent' ? '#fff' : '#666'}
                   />
@@ -199,7 +219,7 @@ const InviteFamilyScreen = () => {
                   onPress={() => setRole('proche')}
                 >
                   <Ionicons
-                    name="heart"
+                    name='heart'
                     size={20}
                     color={role === 'proche' ? '#fff' : '#666'}
                   />
@@ -221,7 +241,7 @@ const InviteFamilyScreen = () => {
                   onPress={() => setRole('nourrice')}
                 >
                   <Ionicons
-                    name="medkit"
+                    name='medkit'
                     size={20}
                     color={role === 'nourrice' ? '#fff' : '#666'}
                   />
@@ -246,13 +266,13 @@ const InviteFamilyScreen = () => {
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color='#fff' />
               ) : (
                 <>
                   <Ionicons
-                    name="paper-plane"
+                    name='paper-plane'
                     size={20}
-                    color="#fff"
+                    color='#fff'
                     style={styles.sendIcon}
                   />
                   <Text style={styles.sendButtonText}>
@@ -287,7 +307,7 @@ const InviteFamilyScreen = () => {
                             : 'time-outline'
                         }
                         size={24}
-                        color="#fff"
+                        color='#fff'
                       />
                     </View>
                     <View style={styles.memberDetails}>
@@ -329,7 +349,7 @@ const InviteFamilyScreen = () => {
                         style={styles.actionButton}
                         onPress={() => handleResendInvitation(member.email)}
                       >
-                        <Ionicons name="refresh" size={18} color="#007AFF" />
+                        <Ionicons name='refresh' size={18} color='#007AFF' />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.actionButton, styles.deleteButton]}
@@ -338,9 +358,9 @@ const InviteFamilyScreen = () => {
                         }
                       >
                         <Ionicons
-                          name="trash-outline"
+                          name='trash-outline'
                           size={18}
-                          color="#FF3B30"
+                          color='#FF3B30'
                         />
                       </TouchableOpacity>
                     </View>
