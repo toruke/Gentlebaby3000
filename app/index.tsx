@@ -1,5 +1,5 @@
-import { View} from 'react-native';
-import {Link} from 'expo-router';
+import { Link } from 'expo-router';
+import { View } from 'react-native';
 import Button from '../src/components/Button';
 
 export default function Home() {
@@ -11,8 +11,8 @@ export default function Home() {
         alignItems: 'center',
       }}
     >
-      <Button title="caca" onPress={() => {}} />
-      <Link href="/roleApparelManager">Gestion des rôles et des appareils</Link>
+      <Button title="caca" onPress={() => { }} />
+      <Link href="/family/familyManagement">Gestion des rôles et des appareils</Link>
     </View>
   );
 }
