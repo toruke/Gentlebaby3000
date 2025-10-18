@@ -12,7 +12,7 @@ interface ButtonProps {
 export default function Button({ 
   title, 
   onPress, 
-  variant = 'primary', 
+  variant = 'secondary', 
   size = 'md',
   disabled = false, 
 }: ButtonProps) {
