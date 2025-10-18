@@ -1,4 +1,33 @@
+import { useEffect, useState } from 'react';
+import { getFamilyService } from '../services/FamilyService';
+import { FamilyMember } from '../components/FamilyMember';
+
 export const useFamilyManagement = () => {
+  const [family, setFamily] = useState<FamilyMember[]>();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  
+  useEffect (() => {
+    const fetchFamily = async() =>{
+      try{
+        setLoading(true);
+        const  familyQuery = await getFamilyService();
+        if (familyQuery.length === 0 ){
+          setError('Aucun membre trouvé');
+        }
+        setFamily(familyQuery);
+      }
+      catch(error){
+        // eslint-disable-next-line no-console
+        console.error('Erreur Firebase: ' , error);
+        setError('Erreur lors de la récupération des membres de la famille');
+      }
+      finally {
+        setLoading(false);
+      }
+    };
+    fetchFamily();
+  },[]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -24,5 +53,5 @@ export const useFamilyManagement = () => {
     default: return '#718096';
     }
   };
-  return { getStatusColor, getStatusText, getRoleColor };
+  return { family,loading, error, getStatusColor, getStatusText, getRoleColor };
 };

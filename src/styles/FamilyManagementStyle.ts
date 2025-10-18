@@ -1,6 +1,15 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
+  loading:{
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 38,
+  },
+  error:{
+    color: 'red',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',

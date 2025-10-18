@@ -12,7 +12,7 @@ export default function Home() {
       }}
     >
       <Button title="caca" onPress={() => { }} />
-      <Link href="/family/familyManagement">Gestion des rôles et des appareils</Link>
+      <Link href="/family/FamilyManagement">Gestion des rôles et des appareils</Link>
     </View>
   );
 }
