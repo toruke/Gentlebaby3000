@@ -13,10 +13,6 @@ export default function Index() {
       />
 
       <View className="h-10" />
-      <Button
-        title="test"
-        onPress={() => router.push('/test')}
-      />
     </View>
   );
 }
