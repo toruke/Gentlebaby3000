@@ -1,29 +1,39 @@
-import {  View, Text } from 'react-native';
+import {  View, Text, Pressable } from 'react-native';
 import { FamilyMembers } from '../components/FamilyMember';
 import { useFamilyManagement } from '../hoocks/useFamilyManagement';
 import { styles } from '../styles/FamilyManagementStyle';
 
 export default function FamilyManagement() {
-  const {family, loading, error} = useFamilyManagement();
+  const {families, selectedFamily, family, loading, error, selectFamily } = useFamilyManagement();
 
-  return (
-    <>
-      {loading ? (
-        <>
-          <View style={styles.loading}>
-            <Text >Chargement...</Text>
-          </View>
-        </>
-      ):
-        error.length !==0 ? (
-          <>
-            <View>
-              <Text style={styles.error}>{error}</Text>
-            </View>
-          </>
-        ):
-          (<FamilyMembers familyMembers={family ?? []} />)
-      }
-    </>
-  );
+  if (loading){
+    return (
+      <View style={styles.loading}>
+        <Text >Chargement...</Text>
+      </View>
+    );
+  }
+  if (error){
+    return (
+      <View>
+        <Text style={styles.error}>{error}</Text>
+      </View>
+    );
+  }
+  if (families.length > 1 && selectedFamily === ''){
+    return(
+      <View style={styles.multipleFamily}>
+        <Text style={{ fontWeight: 'bold'}}>Choisissez une famille :</Text>
+        {families.map(fam => (
+          <Pressable key={fam.id} onPress={() => selectFamily(fam.id)}>
+            <Text style={{ fontWeight: 'bold' , marginVertical: 5 }}>
+              {`Famille ${fam.name}`}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    );
+  }
+  return <FamilyMembers familyMembers={family ?? []} />;
+  
 };

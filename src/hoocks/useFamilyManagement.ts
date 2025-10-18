@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { getFamilyService } from '../services/FamilyService';
+import { getFamilySelectedService, getFamilyService } from '../services/FamilyService';
 import { FamilyMember } from '../components/FamilyMember';
 
 export const useFamilyManagement = () => {
-  const [family, setFamily] = useState<FamilyMember[]>();
+  const [family, setFamily] = useState<FamilyMember[]>([]);
+  const [families, setFamilies] = useState<{ id: string; name?: string }[]>([]);
+  const [selectedFamily, setSelectedFamily] = useState<string>('');
+
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   
@@ -11,11 +14,19 @@ export const useFamilyManagement = () => {
     const fetchFamily = async() =>{
       try{
         setLoading(true);
-        const  familyQuery = await getFamilyService();
-        if (familyQuery.length === 0 ){
+        const familiesQuery = await getFamilyService();
+        if (familiesQuery.length === 0 ){
           setError('Aucun membre trouvé');
+          return;
         }
-        setFamily(familyQuery);
+        if (familiesQuery.length === 1){
+          const  familyQuery = await getFamilySelectedService(familiesQuery[0].id);
+          setFamily(familyQuery);
+          setSelectedFamily(familiesQuery[0].id);
+        }
+        else {
+          setFamilies(familiesQuery);
+        }
       }
       catch(error){
         // eslint-disable-next-line no-console
@@ -28,6 +39,23 @@ export const useFamilyManagement = () => {
     };
     fetchFamily();
   },[]);
+
+  const selectFamily = async(familyId : string) => {
+    try{
+      setLoading(true);
+      const familyMembers = await getFamilySelectedService(familyId);
+      setFamily(familyMembers);
+      setSelectedFamily(familyId);
+    }
+    catch(error){
+      // eslint-disable-next-line no-console
+      console.error('Impossible de charger cette famille', error);
+      setError('Impossible de charger cette famille');      }
+    finally {
+      setLoading(false);
+    }
+  };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -53,5 +81,6 @@ export const useFamilyManagement = () => {
     default: return '#718096';
     }
   };
-  return { family,loading, error, getStatusColor, getStatusText, getRoleColor };
+
+  return { families, selectedFamily, family, loading, error, selectFamily, getStatusColor, getStatusText, getRoleColor };
 };

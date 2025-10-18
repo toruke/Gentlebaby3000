@@ -10,6 +10,12 @@ export const styles = StyleSheet.create({
   error:{
     color: 'red',
   },
+  multipleFamily: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 38,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
