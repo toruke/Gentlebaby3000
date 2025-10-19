@@ -1,5 +1,4 @@
 import { View } from 'react-native';
-import Button from '../components/Button';
 import { Link } from 'expo-router';
 
 export default function Index() {
@@ -22,9 +21,8 @@ export default function Index() {
           fontWeight: '600',
         }}
       >
-        Inscription Tuteur
+      👨‍👩‍👦‍👦
       </Link>
-      <Button title="caca" onPress={() => {}} />
     </View>
   );
 }
