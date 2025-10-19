@@ -1,25 +1,16 @@
 import { router } from 'expo-router';
 import { fetchSignInMethodsForEmail, updateProfile } from 'firebase/auth';
-import React, { useState } from 'react';
-import { Alert, Button, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Platform } from 'react-native';
 
-import { auth } from '../config/firebaseConfig';
-import { signUp } from '../src/services/auth';
-import { upsertUser } from '../src/services/user';
+import { auth } from '../../config/firebaseConfig';
+import { signUp } from '../../src/services/auth';
+import { upsertUser } from '../../src/services/user';
 
-function notify(title: string, message?: string) {
-  if (Platform.OS === 'web') {
-    window.alert(message ? `${title}\n\n${message}` : title);
-  } else {
-    Alert.alert(title, message);
-  }
-}
+import { notify } from '../utils/notify';
+import { isValidEmail, verificationPassword } from '../utils/validation';
 
-function isValidEmail(e: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-}
-
-export default function SignUpScreen() {
+export function useSignUp() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -27,13 +18,18 @@ export default function SignUpScreen() {
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSignUp() {
+  async function onSubmit() {
     const e = email.trim();
 
     if (!firstName.trim()) return notify('Erreur', 'Prénom requis.');
     if (!lastName.trim()) return notify('Erreur', 'Nom requis.');
     if (!isValidEmail(e)) return notify('Erreur', 'Email invalide.');
-    if (password.length < 6) return notify('Erreur', 'Mot de passe trop court (6+).');
+    if (!verificationPassword(password)) {
+      return notify(
+        'Erreur',
+        'Mot de passe trop faible : minimum 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.',
+      );
+    }
     if (password !== confirm) return notify('Erreur', 'Les mots de passe ne correspondent pas.');
 
     try {
@@ -75,10 +71,10 @@ export default function SignUpScreen() {
       }
 
       const fullName =
-        `${firstName.trim()} ${lastName.trim()}`.replace(/\s+/g, ' ').trim() ||
-        user.displayName ||
-        user.email ||
-        e;
+                `${firstName.trim()} ${lastName.trim()}`.replace(/\s+/g, ' ').trim() ||
+                user.displayName ||
+                user.email ||
+                e;
 
       if (Platform.OS === 'web') {
         notify('Compte créé avec succès', `Bienvenue, ${fullName} !`);
@@ -87,7 +83,7 @@ export default function SignUpScreen() {
         Alert.alert(
           'Succès',
           `Compte créé pour ${user.email ?? e}`,
-          [{ text: 'OK', onPress: () => router.replace('/') }],
+          [{ text: 'OK', onPress: () => router.replace('/profils') }],
         );
       }
     } catch (err: unknown) {
@@ -113,68 +109,11 @@ export default function SignUpScreen() {
     }
   }
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Créer un compte</Text>
+  return {
+    firstName, lastName, email, password, confirm, loading,
 
-      <Text>Prénom</Text>
-      <TextInput
-        style={styles.input}
-        value={firstName}
-        onChangeText={setFirstName}
-        autoCapitalize="words"
-      />
+    setFirstName, setLastName, setEmail, setPassword, setConfirm,
 
-      <Text>Nom</Text>
-      <TextInput
-        style={styles.input}
-        value={lastName}
-        onChangeText={setLastName}
-        autoCapitalize="words"
-      />
-
-      <Text>Email</Text>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        inputMode="email"
-        autoComplete="email"
-      />
-
-      <Text>Mot de passe</Text>
-      <TextInput
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        autoComplete="new-password"
-      />
-
-      <Text>Confirmer le mot de passe</Text>
-      <TextInput
-        style={styles.input}
-        value={confirm}
-        onChangeText={setConfirm}
-        secureTextEntry
-        autoComplete="new-password"
-      />
-
-      <View style={{ marginTop: 8 }}>
-        <Button
-          title={loading ? 'Création...' : 'Créer un compte'}
-          onPress={handleSignUp}
-          disabled={loading}
-        />
-      </View>
-    </View>
-  );
+    onSubmit,
+  };
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 12, borderRadius: 6 },
-});
