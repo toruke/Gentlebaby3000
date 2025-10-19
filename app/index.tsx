@@ -1,6 +1,6 @@
 import { View } from 'react-native';
-import { Link } from 'expo-router';
 import Button from '../components/Button';
+import { Link } from 'expo-router';
 
 export default function Index() {
   return (
@@ -11,7 +11,19 @@ export default function Index() {
         alignItems: 'center',
       }}
     >
-      <Link href="/tutorRegistration">Inscription tuteur</Link>
+      <Link
+        href="/tutorRegistration"
+        style={{
+          backgroundColor: '#007bff',
+          color: '#fff',
+          paddingVertical: 12,
+          paddingHorizontal: 25,
+          borderRadius: 8,
+          fontWeight: '600',
+        }}
+      >
+        Inscription Tuteur
+      </Link>
       <Button title="caca" onPress={() => {}} />
     </View>
   );
