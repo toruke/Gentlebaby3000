@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useSignUp } from '../hooks/useSignUp';
+import { useSignUp } from '../../src/hooks/useSignUp';
 
 export default function SignUpScreen() {
   const {

@@ -6,9 +6,9 @@ export default function ROInput({
   value,
   keyboardType,
 }: {
-    label: string;
-    value: string;
-    keyboardType?: 'email-address' | 'default';
+  label: string;
+  value: string;
+  keyboardType?: 'email-address' | 'default';
 }) {
   return (
     <View style={{ marginBottom: 12 }}>

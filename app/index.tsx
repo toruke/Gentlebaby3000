@@ -8,6 +8,7 @@ export default function Index() {
       <Text style={styles.title}>Bienvenue sur GentleBaby3000</Text>
       <Button title="Créer un compte" onPress={() => router.push('/signup')} />
     </View>
+
   );
 }
 

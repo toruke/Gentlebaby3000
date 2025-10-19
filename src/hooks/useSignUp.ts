@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
 import { auth } from '../../config/firebaseConfig';
-import { signUp } from '../../src/services/auth';
-import { upsertUser } from '../../src/services/user';
+import { signUp } from '../services/auth';
+import { upsertUser } from '../services/user';
 
 import { notify } from '../utils/notify';
 import { isValidEmail, verificationPassword } from '../utils/validation';
@@ -71,10 +71,10 @@ export function useSignUp() {
       }
 
       const fullName =
-                `${firstName.trim()} ${lastName.trim()}`.replace(/\s+/g, ' ').trim() ||
-                user.displayName ||
-                user.email ||
-                e;
+        `${firstName.trim()} ${lastName.trim()}`.replace(/\s+/g, ' ').trim() ||
+        user.displayName ||
+        user.email ||
+        e;
 
       if (Platform.OS === 'web') {
         notify('Compte créé avec succès', `Bienvenue, ${fullName} !`);

@@ -14,6 +14,8 @@ export function useCurrentUserProfile() {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) return router.replace('/');
 
+
+
       try {
         setLoading(true);
         const snap = await getDoc(doc(db, 'users', u.uid));
