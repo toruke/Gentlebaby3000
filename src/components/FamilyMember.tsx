@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useFamilyManagement } from '../hoocks/useFamilyManagement';
+import { useFamilyManagement } from '../hooks/useFamilyManagement';
 import { styles } from '../styles/FamilyManagementStyle';
 
 export type Device = {
@@ -84,7 +84,7 @@ export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) =
                 Appareil
               </Text>
 
-              
+
               {member.device && (
                 <View key={member.device.id} style={styles.deviceItem}>
                   <View style={styles.deviceInfo}>
@@ -118,7 +118,7 @@ export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) =
             </View>
 
             {/* Actions rapides */}
-            
+
             <View style={styles.actionsContainer}>
               {!member.device && (
                 <TouchableOpacity key={member.id} style={styles.actionButton}>
