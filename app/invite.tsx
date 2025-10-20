@@ -1,8 +1,11 @@
+import Button from '@/src/components/Button';
+import QRModal from '@/src/components/qrCode';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Modal,
   ScrollView,
   Text,
   TextInput,
@@ -10,7 +13,6 @@ import {
   View,
 } from 'react-native';
 import { db } from '../config/firebaseConfig';
-import Button from '@/src/components/Button';
 
 interface Invitation {
   id: string;
@@ -25,13 +27,14 @@ interface Invitation {
   tokenInvitation: string;
 }
 
-const InviteFamilyScreen = () => {
+const Invite = () => {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('parent');
   const [isLoading, setIsLoading] = useState(false);
   const [invitedMembers, setInvitedMembers] = useState<Invitation[]>([]);
+  const [qrCodeVisible,setQrCodeVisible] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -280,12 +283,21 @@ const InviteFamilyScreen = () => {
 
         { /* QR Button */}
         <Button
-          title='utilisez un QR code'
-          onPress={()=>{}}
+          title='Utilisez un QR code'
+          onPress={()=>{setQrCodeVisible(true);}}
           className='mt-2 '
         >
           <Ionicons name='qr-code-outline' size={20} color='#fff' />
         </Button>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={qrCodeVisible}
+          onRequestClose={() => setQrCodeVisible(false)}
+        >
+          <QRModal onClose={() => setQrCodeVisible(false)} />
+        </Modal>
 
       </View>
 
@@ -384,4 +396,4 @@ const InviteFamilyScreen = () => {
   );
 };
 
-export default InviteFamilyScreen;
+export default Invite;
