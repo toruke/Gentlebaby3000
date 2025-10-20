@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   Text,
@@ -11,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { db } from '../config/firebaseConfig';
+import Button from '@/src/components/Button';
 
 interface Invitation {
   id: string;
@@ -185,10 +185,10 @@ const InviteFamilyScreen = () => {
           <View className="flex-row gap-2.5">
             <TouchableOpacity
               className={`
-                    flex-1 flex-row items-center justify-center 
+                    flex-1 flex-row items-center justify-center
                     border-2 rounded-xl py-3 gap-1.5
-                    ${role === 'parent' 
-      ? 'bg-blue-500 border-blue-500' 
+                    ${role === 'parent'
+      ? 'bg-blue-500 border-blue-500'
       : 'bg-gray-50 border-gray-200'
     }
                   `}
@@ -211,10 +211,10 @@ const InviteFamilyScreen = () => {
 
             <TouchableOpacity
               className={`
-                    flex-1 flex-row items-center justify-center 
+                    flex-1 flex-row items-center justify-center
                     border-2 rounded-xl py-3 gap-1.5
-                    ${role === 'proche' 
-      ? 'bg-blue-500 border-blue-500' 
+                    ${role === 'proche'
+      ? 'bg-blue-500 border-blue-500'
       : 'bg-gray-50 border-gray-200'
     }
                   `}
@@ -237,10 +237,10 @@ const InviteFamilyScreen = () => {
 
             <TouchableOpacity
               className={`
-                    flex-1 flex-row items-center justify-center 
+                    flex-1 flex-row items-center justify-center
                     border-2 rounded-xl py-3 gap-1.5
-                    ${role === 'nourrice' 
-      ? 'bg-blue-500 border-blue-500' 
+                    ${role === 'nourrice'
+      ? 'bg-blue-500 border-blue-500'
       : 'bg-gray-50 border-gray-200'
     }
                   `}
@@ -263,31 +263,30 @@ const InviteFamilyScreen = () => {
           </View>
         </View>
 
-
         {/* Send Button */}
-        <TouchableOpacity
-          className={`flex-row items-center justify-center bg-blue-500 py-4 rounded-xl mt-2.5 shadow-lg shadow-blue-500/30 ${
-            isLoading ? 'bg-gray-300 shadow-none' : ''
-          }`}
+        <Button
+          title="Envoyer l'invitation"
           onPress={handleSendInvitation}
+          className={isLoading ? 'bg-gray-300 shadow-none' : ''}
           disabled={isLoading}
         >
-          {isLoading ? (
-            <ActivityIndicator color='#fff' />
-          ) : (
-            <>
-              <Ionicons
-                name='paper-plane'
-                size={20}
-                color='#fff'
-                style={{ marginRight: 8 }}
-              />
-              <Text className="text-white text-base font-bold">
-                    Envoyer l'invitation
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+          <Ionicons
+            name='paper-plane'
+            size={20}
+            color='#fff'
+            style={{ marginRight: 8 }}
+          />
+        </Button>
+
+        { /* QR Button */}
+        <Button
+          title='utilisez un QR code'
+          onPress={()=>{}}
+          className='mt-2 '
+        >
+          <Ionicons name='qr-code-outline' size={20} color='#fff' />
+        </Button>
+
       </View>
 
       {/* Invitations Section */}

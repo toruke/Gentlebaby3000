@@ -5,7 +5,7 @@ export default function RootLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" />
-      <Stack.Screen name="invite" options={{title: 'Inviter la'}} />
+      <Stack.Screen name="invite" options={{title: 'Inviter la Famille'}} />
     </Stack>
   );
 }
