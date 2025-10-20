@@ -3,13 +3,20 @@ import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 
 
 import { useEditProfile } from '../hooks/useEditProfile';
-import { User } from '../models/user';
+
+export interface User {
+  id: string,
+  firstname: string,
+  lastname: string,
+  mail_address: string,
+  password: string
+}
 
 interface EditProfilFormProps {
   user: User;
   onClose(): void;
 }
-const EditProfilForm: React.FC<EditProfilFormProps> = ({ user, onClose }) => {
+const EditProfileForm: React.FC<EditProfilFormProps> = ({ user, onClose }) => {
   const { onSubmit, onSubmitPassword, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setCurrentPassword, setNewPassword, setConfirmPassword, setStep, error } = useEditProfile(user, onClose);
 
   return (
@@ -96,4 +103,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EditProfilForm;
+export default EditProfileForm;

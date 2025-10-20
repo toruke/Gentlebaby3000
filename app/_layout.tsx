@@ -9,6 +9,7 @@ export default function RootLayout() {
 
       <Stack.Screen name="(screens)/signup" options={{ title: 'Inscription' }} />
       <Stack.Screen name="(screens)/profils" options={{ title: 'Mon profil' }} />
+      <Stack.Screen name="/user/EditingProfileUser" options={{ title: 'Modification de mon profil utilisateur' }} />
     </Stack>
   );
 }

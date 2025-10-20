@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { User } from '../models/user';
-import { verificationEmail, verificationPassword } from '../utils/Verificaion';
+import { User } from '../../app/models/user';
+import { isValidEmail, verificationPassword } from '../utils/validation';
 
 
 export const useEditProfile = (user: User, onClose: () => void) => {
@@ -19,7 +19,7 @@ export const useEditProfile = (user: User, onClose: () => void) => {
       setError('Vous devez remplir tous les champs');
       return;
     }
-    if (!verificationEmail(editMailAddress)) {
+    if (!isValidEmail(editMailAddress)) {
       setError('Votre adresse mail n\'est pas valide');
       return;
 
