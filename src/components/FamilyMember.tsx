@@ -31,7 +31,7 @@ export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) =
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Gestion Familiale</Text>
+        <Text style={styles.greeting}>Gestion de la Famille</Text>
         <Text style={styles.subtitle}>Membres et appareils connectés</Text>
       </View>
 
