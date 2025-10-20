@@ -12,12 +12,9 @@ import { Link } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 // Import des nouvelles fonctions organisées
-// Update the path below if your useChild hook is located elsewhere
 import { useChild } from '../../hooks/useChild';
 import { CreateChildRequest } from '../../models/child';
 import { validateName, isChildAgeValid } from '../../utils/validators';
-
-// Dans votre composant, ajoutez :
 
 export default function ChildProfileScreen() {
   const [firstName, setFirstName] = useState('');
@@ -26,12 +23,28 @@ export default function ChildProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | 'other'>();
 
+  // États pour le tracking des champs touchés
+  const [firstNameTouched, setFirstNameTouched] = useState(false);
+  const [lastNameTouched, setLastNameTouched] = useState(false);
+  const [birthDateTouched, setBirthDateTouched] = useState(false);
+  const [genderTouched, setGenderTouched] = useState(false);
+
   const { createChild, loading } = useChild();
+
+  // Fonctions de validation
+  const isFirstNameValid = validateName(firstName);
+  const isLastNameValid = validateName(lastName);
+  const isBirthDateValid = isChildAgeValid(birthDate);
+  const isGenderValid = !!selectedGender;
+
+  // Fonction pour déterminer si le formulaire est valide
+  const isFormValid = isFirstNameValid && isLastNameValid && isBirthDateValid && isGenderValid;
 
   const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setBirthDate(selectedDate);
+      setBirthDateTouched(true);
     }
   };
 
@@ -49,35 +62,41 @@ export default function ChildProfileScreen() {
 
   const handleGenderSelect = (gender: 'male' | 'female' | 'other') => {
     setSelectedGender(gender);
+    setGenderTouched(true);
+  };
+
+  const handleFirstNameChange = (text: string) => {
+    setFirstName(text);
+  };
+
+  const handleFirstNameBlur = () => {
+    setFirstNameTouched(true);
+  };
+
+  const handleLastNameChange = (text: string) => {
+    setLastName(text);
+  };
+
+  const handleLastNameBlur = () => {
+    setLastNameTouched(true);
   };
 
   const handleSubmit = async () => {
-    // Validation finale avant soumission
-    if (!validateName(firstName)) {
-      Alert.alert('Erreur', 'Le prénom n\'est pas valide. Utilisez seulement des lettres (2-20 caractères).');
-      return;
-    }
+    // Marquer tous les champs comme touchés pour afficher toutes les erreurs
+    setFirstNameTouched(true);
+    setLastNameTouched(true);
+    setBirthDateTouched(true);
+    setGenderTouched(true);
 
-    if (!validateName(lastName)) {
-      Alert.alert('Erreur', 'Le nom n\'est pas valide. Utilisez seulement des lettres (2-20 caractères).');
-      return;
-    }
-
-    if (!selectedGender) {
-      Alert.alert('Erreur', 'Veuillez sélectionner un genre.');
-      return;
-    }
-
-    if (!isChildAgeValid(birthDate)) {
-      Alert.alert('Erreur', 'La date de naissance n\'est pas valide. L\'enfant doit avoir entre 0 et 18 ans.');
-      return;
+    if (!isFormValid) {
+      return; // Ne rien faire si le formulaire n'est pas valide
     }
 
     try {
       const childData: CreateChildRequest = {
         firstName,
         lastName,
-        gender: selectedGender,
+        gender: selectedGender!,
         birthday: birthDate,
       };
 
@@ -89,19 +108,48 @@ export default function ChildProfileScreen() {
       setLastName('');
       setBirthDate(new Date());
       setSelectedGender(undefined);
+      setFirstNameTouched(false);
+      setLastNameTouched(false);
+      setBirthDateTouched(false);
+      setGenderTouched(false);
             
     } catch (error) {
       const errorMessage = typeof error === 'object' && error !== null && 'message' in error
         ? String((error as { message?: string }).message)
         : 'Une erreur est survenue lors de la création du profil.';
-      Alert.alert(errorMessage, 'Une erreur est survenue lors de la création du profil.');
+      Alert.alert('Erreur', errorMessage);
     }
   };
 
-  // Le reste de votre code JSX reste identique...
+  // Fonctions pour générer les messages d'erreur
+  const getFirstNameError = () => {
+    if (!firstNameTouched) return null;
+    if (!firstName) return 'Le prénom est requis';
+    if (!isFirstNameValid) return 'Le prénom n\'est pas valide. Utilisez seulement des lettres (2-20 caractères).';
+    return null;
+  };
+
+  const getLastNameError = () => {
+    if (!lastNameTouched) return null;
+    if (!lastName) return 'Le nom est requis';
+    if (!isLastNameValid) return 'Le nom n\'est pas valide. Utilisez seulement des lettres (2-20 caractères).';
+    return null;
+  };
+
+  const getBirthDateError = () => {
+    if (!birthDateTouched) return null;
+    if (!isBirthDateValid) return 'L\'enfant doit avoir entre 0 et 18 ans.';
+    return null;
+  };
+
+  const getGenderError = () => {
+    if (!genderTouched) return null;
+    if (!isGenderValid) return 'Veuillez sélectionner un genre.';
+    return null;
+  };
+
   return (
     <ScrollView style={styles.container}>
-      {/* Votre JSX actuel reste le même */}
       <View style={styles.header}>
         <Text style={styles.greeting}>Création du profile Enfant</Text>
         <Text style={styles.subtitle}>Ajoutez les informations de votre enfant</Text>
@@ -111,33 +159,59 @@ export default function ChildProfileScreen() {
         
         {/* Champ Prénom */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Prénom</Text>
+          <Text style={styles.label}>Prénom *</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              firstNameTouched && !isFirstNameValid && styles.inputError,
+              firstNameTouched && isFirstNameValid && firstName && styles.inputValid,
+            ]}
             value={firstName}
-            onChangeText={setFirstName}
+            onChangeText={handleFirstNameChange}
+            onBlur={handleFirstNameBlur}
             placeholder="Prénom"
             autoCapitalize="words"
           />
+          {getFirstNameError() && (
+            <Text style={styles.errorText}>{getFirstNameError()}</Text>
+          )}
+          {firstNameTouched && isFirstNameValid && firstName && (
+            <Text style={styles.validText}>✓ Prénom valide</Text>
+          )}
         </View>
 
         {/* Champ Nom */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Nom</Text>
+          <Text style={styles.label}>Nom *</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              lastNameTouched && !isLastNameValid && styles.inputError,
+              lastNameTouched && isLastNameValid && lastName && styles.inputValid,
+            ]}
             value={lastName}
-            onChangeText={setLastName}
+            onChangeText={handleLastNameChange}
+            onBlur={handleLastNameBlur}
             placeholder="Nom"
             autoCapitalize="words"
           />
+          {getLastNameError() && (
+            <Text style={styles.errorText}>{getLastNameError()}</Text>
+          )}
+          {lastNameTouched && isLastNameValid && lastName && (
+            <Text style={styles.validText}>✓ Nom valide</Text>
+          )}
         </View>
 
         {/* Champ Date de naissance */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Date de naissance</Text>
+          <Text style={styles.label}>Date de naissance *</Text>
           <TouchableOpacity
-            style={styles.dateInput}
+            style={[
+              styles.dateInput,
+              birthDateTouched && !isBirthDateValid && styles.inputError,
+              birthDateTouched && isBirthDateValid && styles.inputValid,
+            ]}
             onPress={showDatePickerModal}
           >
             <Text style={[
@@ -156,16 +230,23 @@ export default function ChildProfileScreen() {
               maximumDate={new Date()}
             />
           )}
+          {getBirthDateError() && (
+            <Text style={styles.errorText}>{getBirthDateError()}</Text>
+          )}
+          {birthDateTouched && isBirthDateValid && (
+            <Text style={styles.validText}>✓ Âge valide</Text>
+          )}
         </View>
 
         {/* Champ Genre */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Genre</Text>
+          <Text style={styles.label}>Genre *</Text>
           <View style={styles.genderContainer}>
             <TouchableOpacity
               style={[
                 styles.genderButton,
                 selectedGender === 'male' && styles.genderSelected,
+                genderTouched && !isGenderValid && styles.genderButtonError,
               ]}
               onPress={() => handleGenderSelect('male')}
             >
@@ -178,6 +259,7 @@ export default function ChildProfileScreen() {
               style={[
                 styles.genderButton,
                 selectedGender === 'female' && styles.genderSelected,
+                genderTouched && !isGenderValid && styles.genderButtonError,
               ]}
               onPress={() => handleGenderSelect('female')}
             >
@@ -190,6 +272,7 @@ export default function ChildProfileScreen() {
               style={[
                 styles.genderButton,
                 selectedGender === 'other' && styles.genderSelected,
+                genderTouched && !isGenderValid && styles.genderButtonError,
               ]}
               onPress={() => handleGenderSelect('other')}
             >
@@ -199,12 +282,21 @@ export default function ChildProfileScreen() {
               ]}>Autre</Text>
             </TouchableOpacity>
           </View>
+          {getGenderError() && (
+            <Text style={styles.errorText}>{getGenderError()}</Text>
+          )}
+          {genderTouched && isGenderValid && (
+            <Text style={styles.validText}>✓ Genre sélectionné</Text>
+          )}
         </View>
                 
         <TouchableOpacity 
-          style={styles.createButton}
+          style={[
+            styles.createButton,
+            (!isFormValid || loading) && styles.createButtonDisabled,
+          ]}
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={!isFormValid || loading}
         >
           <Text style={styles.createButtonText}>
             {loading ? 'Création...' : 'Créer le profil'}
@@ -275,11 +367,22 @@ const styles = StyleSheet.create({
     borderColor: '#e53e3e',
     backgroundColor: '#fed7d7',
   },
+  inputValid: {
+    borderColor: '#38a169',
+    backgroundColor: '#f0fff4',
+  },
   errorText: {
     color: '#e53e3e',
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+  },
+  validText: {
+    color: '#38a169',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+    fontWeight: '500',
   },
   dateInput: {
     backgroundColor: '#ffffff',
@@ -322,6 +425,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
+  genderButtonError: {
+    borderColor: '#e53e3e',
+    backgroundColor: '#fed7d7',
+  },
   genderSelected: {
     backgroundColor: '#6b46c1',
     borderColor: '#6b46c1',
@@ -346,6 +453,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+  },
+  createButtonDisabled: {
+    backgroundColor: '#a0aec0',
+    shadowColor: '#a0aec0',
   },
   createButtonText: {
     color: '#ffffff',
