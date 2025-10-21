@@ -58,11 +58,11 @@ module.exports = defineConfig([
   },
 
   // Configuration TypeScript 
-  ...(function() {
+  ...(function () {
     try {
       const tseslint = require('@typescript-eslint/eslint-plugin');
       const tsparser = require('@typescript-eslint/parser');
-      
+
       return [
         {
           files: ['**/*.{ts,tsx}'],
@@ -93,7 +93,7 @@ module.exports = defineConfig([
       'no-unused-vars': 'warn',
       'prefer-const': 'error',
       'no-var': 'error',
-      
+
       // Règles de style de code
       'quotes': ['warn', 'single'],
       'semi': ['error', 'always'],

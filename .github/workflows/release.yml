@@ -1,0 +1,12 @@
+name: Realease & Publish to NPM
+on: workflow_dispatch
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Install the dependancies
+        run: npm ci
+      - name: End message
+        run: echo 'All done!'

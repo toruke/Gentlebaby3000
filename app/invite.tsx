@@ -1,3 +1,4 @@
+import { db } from '@/config/firebaseConfig';
 import Button from '@/src/components/Button';
 import QRModal from '@/src/components/qrCode';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,19 +13,23 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { db } from '../config/firebaseConfig';
 
 interface Invitation {
   id: string;
-  acceptedAt: Timestamp;
-  createdAt: Timestamp;
-  emailInvited: string;
-  expiredAt: Timestamp;
+  email: string;
+  name: string;
+  role: 'Parent' | 'Proche' | 'Nourrice';
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: Timestamp | string;
+  expiresAt: string;
   familyId: string;
-  roleProposed: string;
+  receiverId: string;
   senderId: string;
-  status: string;
-  tokenInvitation: string;
+  token: string;
+  familyInfo?: {
+    babiesCount: number;
+    membersCount: number;
+  };
 }
 
 const Invite = () => {
@@ -35,6 +40,13 @@ const Invite = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [invitedMembers, setInvitedMembers] = useState<Invitation[]>([]);
   const [qrCodeVisible,setQrCodeVisible] = useState<boolean>(false);
+  //const [familyId, setFamilyId] = useState('');
+  //const [senderId, setSenderId] = useState('');
+
+
+  //const senderId = auth().currentUser?.uid || '';
+
+  //const familyId = 'id_famille_actuelle';
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -291,7 +303,7 @@ const Invite = () => {
         </Button>
 
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={qrCodeVisible}
           onRequestClose={() => setQrCodeVisible(false)}
@@ -360,7 +372,7 @@ const Invite = () => {
                       </Text>
                     </View>
                     <Text className="text-xs text-gray-600">• {member.role}</Text>
-                    <Text className="text-xs text-gray-400">• {member.invitedAt}</Text>
+                    <Text className="text-xs text-gray-400">• {member.receiverId}</Text>
                   </View>
                 </View>
               </View>
