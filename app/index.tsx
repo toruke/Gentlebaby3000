@@ -6,7 +6,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bienvenue sur GentleBaby3000</Text>
-      <Button title="Créer un compte" onPress={() => router.push('/signup')} />
+      <Button title="Créer un compte" onPress={() => router.push('./auth/signup')} />
     </View>
 
   );
