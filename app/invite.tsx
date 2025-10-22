@@ -1,5 +1,6 @@
 import { db } from '@/config/firebaseConfig';
 import Button from '@/src/components/Button';
+import DropdownInput from '@/src/components/DropdownInput';
 import QRModal from '@/src/components/qrCode';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -7,7 +8,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
-  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -40,13 +40,7 @@ const Invite = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [invitedMembers, setInvitedMembers] = useState<Invitation[]>([]);
   const [qrCodeVisible,setQrCodeVisible] = useState<boolean>(false);
-  //const [familyId, setFamilyId] = useState('');
-  //const [senderId, setSenderId] = useState('');
-
-
-  //const senderId = auth().currentUser?.uid || '';
-
-  //const familyId = 'id_famille_actuelle';
+  const [familyNameSelected, setFamilyNameSelected] = useState(''); // la famillies qui a été sélectionnée
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -148,10 +142,8 @@ const Invite = () => {
 
   return (
 
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      className="flex-1"
-      contentContainerClassName="p-5 pb-10"
+    <View
+      className="flex-1 p-5 pb-10"
     >
       {/* Info Card */}
       <View className="flex-row bg-blue-50 p-4 rounded-xl mb-6">
@@ -168,7 +160,7 @@ const Invite = () => {
         </Text>
 
         {/* Email Input Group */}
-        <View className="mb-5">
+        <View className="mb-2">
           <Text className="text-sm font-semibold text-gray-700 mb-2">
                 Adresse email <Text className="text-red-500">*</Text>
           </Text>
@@ -191,6 +183,13 @@ const Invite = () => {
             />
           </View>
         </View>
+
+        <DropdownInput
+          placeholder="Family Name"
+          value={familyNameSelected}  // Chaîne sélectionnée, pas le tableau
+          onChangeText={setFamilyNameSelected}  // Met à jour la chaîne
+          placeholderTextColor="#999"
+        />
 
         {/* Role Selection */}
         <View className="mb-5">
@@ -404,7 +403,7 @@ const Invite = () => {
           ))}
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 };
 

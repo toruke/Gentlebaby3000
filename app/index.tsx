@@ -8,7 +8,8 @@ export default function Index() {
     <View style={styles.container}>
       <Text style={styles.title}>Bienvenue sur GentleBaby3000</Text>
       <Button title="Créer un compte" onPress={() => router.push('/signup')} />
-      
+      <View style={{ height: 20 }} />
+      <Button title="Mon Profil" onPress={() => router.push('/profils')} />
       <View style={styles.inviteContainer}>
         <Button
           title="InviteGeneral"
