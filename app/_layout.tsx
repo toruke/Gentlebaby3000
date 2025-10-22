@@ -7,7 +7,7 @@ export default function RootLayout() {
       <Stack.Screen name="index" options={{ title: 'Accueil' }} />
       <Stack.Screen
         name="tutorRegistration"
-        options={{ title: 'Inscription Tuteur' }}
+        options={{ title: 'family' }}
       />
     </Stack>
   );
