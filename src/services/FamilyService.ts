@@ -3,13 +3,13 @@ import { collection, where, getDocs, getDoc, doc, query } from 'firebase/firesto
 import { db } from '@/config/firebaseConfig';
 import { Device, FamilyMember } from '../components/FamilyMember';
 
-const MEMBERBERSHIP_COLLECTION = 'memberShip';
+const MEMBERBERSHIP_COLLECTION = 'userFamily';
 const USERS_COLLECTION = 'user';
 const DEVICE_COLLECTION = 'device';
 const FAMILY_COLLECTION = 'family';
 
 // !!!!!! A SUPPRIMER
-const currentUser = { uid: 'XyDTfApw8wbPL6OOn2sT2jqmPkv1', email: 'maggie.remy@gmail.com'};
+const currentUser = { uid: 'JL0YZyEU8BgqwSH7t6a9kqjnCnE2', email: 'm.remy@gmail.com'};
 
 export async function getFamilyService() {
   //connected user verification 
@@ -24,7 +24,7 @@ export async function getFamilyService() {
     const membersShip = query(
       collection(db, MEMBERBERSHIP_COLLECTION),
       where('userId', '==', user.uid), 
-      where('role', '==', 'Tuteur'));
+      where('role', '==', 'tuteur'));
     const snap = await getDocs(membersShip);
     if (snap.empty) {
       return [];}
