@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../config/firebaseConfig';
 import {View,Text,TextInput,TouchableOpacity,Image,FlatList,Modal,StyleSheet} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -7,12 +9,34 @@ import Toast from 'react-native-toast-message';
 import gtb2 from '../assets/images/gtb2.jpg';
 import gtb3 from '../assets/images/gtb3.jpg';
 import gtb4 from '../assets/images/gtb4.jpg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+ 
 
 export default function TutorRegistration() {
   const [familyName, setFamilyName] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<string | undefined>(undefined);
   const [chosenDefault, setChosenDefault] = useState<number>(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const [user, setUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (!u) {
+        Toast.show({
+          type: 'error',
+          text1: 'Erreur',
+          text2: 'Vous devez être connecté pour créer une famille',
+        });
+      // éventuellement router.push vers la page de login
+      } else {
+        setUser(u);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
 
   // Tableau des photos par défaut
   const defaultPhotos = [gtb2, gtb3, gtb4];
@@ -69,9 +93,23 @@ export default function TutorRegistration() {
       });
       return;
     }
-    // Dans handleCreateFamily
+
     try {
-      await createFamily(familyName); // ✅ on garde exactement le même appel
+    // Vérifier si l'utilisateur est connecté
+      if (!user) {
+        Toast.show({
+          type: 'error',
+          text1: 'Erreur',
+          text2: 'Utilisateur non connecté',
+        });
+        return;
+      }
+
+
+      // Appel à createFamily en incluant éventuellement le token
+      const token = await AsyncStorage.getItem('token') ?? undefined; // si tu utilises JWT
+      await createFamily(familyName, token); // adapter createFamily pour accepter token si nécessaire
+
       Toast.show({
         type: 'success',
         text1: 'Succès 🎉',
@@ -84,27 +122,29 @@ export default function TutorRegistration() {
           params: { familyName },
         });
       }, 800);
+
       setFamilyName('');
       setSelectedPhoto(undefined);
       setChosenDefault(0);
-    } catch (error) {
-      console.error('Erreur createFamily:', error); // <-- utiliser la variable pour ESLint
+
+    }catch (error: unknown) {
+      const err = error as Error;
+      console.error('Erreur createFamily:', err);
       Toast.show({
         type: 'error',
         text1: 'Erreur',
-        text2: 'Impossible de créer la famille',
+        text2: err.message || 'Impossible de créer la famille',
       });
     }
-
   };
 
-  const currentPhoto =
-    selectedPhoto ||
-    (chosenDefault >= 0 ? defaultPhotos[chosenDefault].uri : defaultPhotos[0].uri);
+  const currentPhoto = selectedPhoto
+    ? { uri: selectedPhoto }       // photo choisie via ImagePicker
+    : defaultPhotos[chosenDefault] || defaultPhotos[0]; // photo par défaut
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>👨‍👩 Création d'une famille </Text>
+      <Text style={styles.header}>👨‍👩‍👦‍👦 Création d'une famille </Text>
 
       <View style={styles.card}>
         <Text style={styles.title}>Créer une famille</Text>
@@ -112,7 +152,7 @@ export default function TutorRegistration() {
         {/* --- Photo --- */}
         <View style={{ alignItems: 'center', marginBottom: 16 }}>
           <TouchableOpacity onPress={() => setIsModalVisible(true)}>
-            <Image source={{ uri: currentPhoto }} style={styles.profileImage} />
+            <Image source={currentPhoto} style={styles.profileImage} />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={pickImage}>
@@ -168,7 +208,7 @@ export default function TutorRegistration() {
       <Modal visible={isModalVisible} transparent animationType="fade">
         <View style={styles.modalBackground}>
           <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-            <Image source={{ uri: currentPhoto }} style={styles.modalImage} />
+            <Image source={currentPhoto} style={styles.modalImage} />
           </TouchableOpacity>
         </View>
       </Modal>
