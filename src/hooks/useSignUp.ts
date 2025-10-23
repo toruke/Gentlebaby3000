@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { fetchSignInMethodsForEmail, updateProfile } from 'firebase/auth';
+import { fetchSignInMethodsForEmail, sendEmailVerification, updateProfile } from 'firebase/auth';
 import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
@@ -50,6 +50,13 @@ export function useSignUp() {
 
       const user = await signUp(e, password);
       console.log('[signup] auth ok:', user.uid);
+      
+      try {
+        await sendEmailVerification(user);
+        alert('Un email de vérification a été envoyé à votre adresse.');
+      } catch (verifErr) {
+        console.log('[signup] sendEmailVerification error:', verifErr);
+      }
 
       try {
         await updateProfile(user, { displayName: `${firstName.trim()} ${lastName.trim()}` });

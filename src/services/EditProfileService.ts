@@ -2,7 +2,7 @@
 import { collection, where, getDocs, doc, query, updateDoc, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { db, auth } from '@/config/firebaseConfig';
 //import { db } from '@/config/firebaseConfig';
-import { EmailAuthProvider, reauthenticateWithCredential, updateEmail, updatePassword } from 'firebase/auth';
+import { EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification, updateEmail, updatePassword } from 'firebase/auth';
 
 const USERS_COLLECTION = 'user';
 type UserUpdate = {
@@ -36,23 +36,19 @@ export async function getVerificationPassword(password : string) {
 
 };
 
-export async function updateEmailAndPassword(email? : string, password? : string) {
+export async function updateThePassword(password? : string) {
   const user = auth.currentUser;
   
 
   if (!user) throw new Error('Utilisateur non connecté');
+  if (!password) return 'Aucun mot de passe fourni.';
 
   try{
-    if (email){
-      await updateEmail(user, email);
-      console.log('Email Firebase Auth mis à jour avec succès');
+    
+    await updatePassword(user,password);
+    console.log('Mot de passe Firebase Auth mis à jour avec succès');
 
-    }
-    if (password){
-      await updatePassword(user,password);
-      console.log('Mot de passe Firebase Auth mis à jour avec succès');
 
-    }
     await user.reload();
     return 'La modification est réussie';
   }
@@ -89,6 +85,8 @@ export async function updateProfileUser(firstname: string, lastname: string, ema
   
 
   if (!user) throw new Error('Utilisateur non connecté');
+  console.log('------------------');
+  console.log(user.providerData);
 
   try{
     const snap = await getProfileUser();
@@ -113,12 +111,14 @@ export async function updateProfileUser(firstname: string, lastname: string, ema
           return 'Veuillez vérifier votre email avant de le modifier.';
         }
         await updateEmail(user, email);
-        console.log('Email Firebase Auth mis à jour avec succès');
         update.email = email;
+        await sendEmailVerification(user);
+        alert('Un email de vérification a été envoyé à votre adresse.');
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        console.log(err);
-        if (err.code === 'auth/operation-not-allowed') {
+      } catch (error: any) {
+        console.log(error);
+        if (error.code === 'auth/operation-not-allowed') {
           return 'Changement d’email impossible : activation du provider Email/Password requise.';
         }
         return 'Erreur lors de la mise à jour de l’email dans Auth';
@@ -126,7 +126,7 @@ export async function updateProfileUser(firstname: string, lastname: string, ema
     }
 
     if (newPassword) {
-      const success = await updateEmailAndPassword(undefined, newPassword);
+      const success = await updateThePassword(newPassword);
       if (!success) return 'Erreur lors de la mise à jour du mot de passe';
     }
 
