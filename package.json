@@ -11,7 +11,8 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "lint:watch": "eslint . --ext .js,.jsx,.ts,.tsx --watch",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release": "release-it"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -67,6 +68,7 @@
     "lint-staged": "^16.2.4",
     "metro": "^0.83.3",
     "metro-react-native-babel-preset": "^0.77.0",
+    "release-it": "^19.0.5",
     "typescript": "~5.9.2"
   },
   "lint-staged": {
