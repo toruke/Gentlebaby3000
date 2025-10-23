@@ -5,37 +5,34 @@ import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useEditProfile } from '../hooks/useEditProfile';
 
 export interface User {
-  id: string,
-  firstname: string,
-  lastname: string,
-  mail_address: string,
-  password: string
+  firstName: string,
+  lastName: string,
+  email: string,
 }
 
 interface EditProfilFormProps {
-  user: User;
   onClose(): void;
 }
-const EditProfileForm: React.FC<EditProfilFormProps> = ({ user, onClose }) => {
-  const { onSubmit, onSubmitPassword, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setCurrentPassword, setNewPassword, setConfirmPassword, setStep, error } = useEditProfile(user, onClose);
+const EditProfileForm: React.FC<EditProfilFormProps> = ( {onClose} ) => {
+  const { user, onSubmit, onSubmitPassword, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setCurrentPassword, setNewPassword, setConfirmPassword, setStep, error } = useEditProfile(onClose);
 
   return (
     <View>
       <TextInput
         style={styles.textInput}
-        placeholder={user.firstname}
+        placeholder={user?.firstName ?? 'Prénom'}
         onChangeText={(text) => { setEditFirstname(text); }}
         value={editFirstname}
       />
       <TextInput
         style={styles.textInput}
-        placeholder={user.lastname}
+        placeholder={user?.lastName ?? 'Nom'}
         onChangeText={(text) => { setEditLastname(text); }}
         value={editLastname}
       />
       <TextInput
         style={styles.textInput}
-        placeholder={user.mail_address}
+        placeholder={user?.email ?? 'email'}
         onChangeText={(text) => { setEditMailAddress(text); }}
         value={editMailAddress}
       />

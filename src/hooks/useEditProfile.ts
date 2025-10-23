@@ -1,21 +1,61 @@
-import { useState } from 'react';
-import { User } from '../../app/models/user';
+import { useEffect, useState } from 'react';
 import { isValidEmail, verificationPassword } from '../utils/validation';
+import { User } from '../components/EditProfileForm';
+import { getProfileUser, getVerificationPassword, updateProfileUser } from '../services/EditProfileService';
 
 
-export const useEditProfile = (user: User, onClose: () => void) => {
-
-  const [editFirstname, setEditFirstname] = useState<string>(user.firstname);
-  const [editLastname, setEditLastname] = useState<string>(user.lastname);
-  const [editMailAddress, setEditMailAddress] = useState<string>(user.mail_address);
+export const useEditProfile =  (onClose: () => void) => {
+  
+  const [error, setError] = useState<string>('');
+  const [user, setUser] = useState<User>();
+  const [editFirstname, setEditFirstname] = useState<string>('');
+  const [editLastname, setEditLastname] = useState<string>('');
+  const [editMailAddress, setEditMailAddress] = useState<string>('');
   const [step, setStep] = useState<'verify' | 'ready' | 'change'>('verify');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string>('');
 
-  const onSubmit = () => {
-    if (editFirstname.trim().length === 0 || editLastname.trim().length === 0) {
+  
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const snapUser = await getProfileUser();
+        if (snapUser.empty) {
+          setError('Une erreur est survenue lors de la récupération des données utilisateurs');
+          return ;
+        }
+        const userDoc = snapUser.docs[0];
+        const userData = userDoc.data();
+        console.log(userData);
+
+        const fetchedUser: User = {
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          email: userData.email,
+        };
+        setEditFirstname(fetchedUser.firstName);
+        setEditLastname(fetchedUser.lastName);
+        setEditMailAddress(fetchedUser.email);
+        setUser(fetchedUser);
+        console.log(fetchedUser);
+
+      }
+      catch(error){
+        console.error('Erreur Firebase: ' , error);
+        setError('Erreur lors de la récupération des données utilisateurs');
+      }
+    };
+    fetchUser();
+  },[]);
+
+
+  const onSubmit = async () => {
+    if (!user){
+      setError('Utilisateur non chargé');
+      return;
+    }
+    if (!editFirstname.trim()|| !editLastname.trim()) {
       setError('Vous devez remplir tous les champs');
       return;
     }
@@ -36,21 +76,27 @@ export const useEditProfile = (user: User, onClose: () => void) => {
         return;
       }
     }
-    const updateUser: User = {
-      id: user.id,
-      firstname: editFirstname,
-      lastname: editLastname,
-      mail_address: editMailAddress,
-      password: step === 'change' ? newPassword : user.password,
-    };
-    // eslint-disable-next-line no-console
-    console.log(updateUser);
-    onClose();
+    const result = await updateProfileUser(editFirstname,editLastname,editMailAddress, step === 'change' ? newPassword : undefined);
+    if (result.includes('réussie')) {
+      setError('');
 
+      const updatedUser: User = {
+        firstName: editFirstname,
+        lastName: editLastname,
+        email: editMailAddress,
+      };
+      setUser(updatedUser);
+      onClose();
+    }
+    else {
+      setError(result);
+    }
+    
   };
 
-  const onSubmitPassword = () => {
-    if (currentPassword === user.password) {
+  const onSubmitPassword = async () => {
+    const passwordVerif = await getVerificationPassword(currentPassword);
+    if (passwordVerif) {
       setStep('ready');
       setError('');
     }
@@ -59,5 +105,5 @@ export const useEditProfile = (user: User, onClose: () => void) => {
     }
   };
 
-  return { onSubmit, onSubmitPassword, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setStep, setCurrentPassword, setNewPassword, setConfirmPassword, error, setError };
+  return { user, onSubmit, onSubmitPassword, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setStep, setCurrentPassword, setNewPassword, setConfirmPassword, error, setError };
 };

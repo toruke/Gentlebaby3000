@@ -1,11 +1,12 @@
-import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import ROInput from '../../src/components/ROInput';
 import { useCurrentUserProfile } from '../../src/hooks/useCurrentUserProfile';
+import { Link } from 'expo-router';
 
 export default function Profil() {
-  const { firstName, lastName, email, loading } = useCurrentUserProfile();
-
+  const { firstName, lastName, email, loading} = useCurrentUserProfile();
+  
+  
   if (loading) {
     return <View style={styles.center}><Text>Chargement…</Text></View>;
   }
@@ -16,6 +17,9 @@ export default function Profil() {
       <ROInput label="Prénom" value={firstName} />
       <ROInput label="Nom" value={lastName} />
       <ROInput label="Email" value={email} keyboardType="email-address" />
+      <Link href="/user/EditingProfileUser">
+        <Text style={{ color: 'blue', marginTop: 20, fontSize:18}}>Modifier profil</Text>
+      </Link>
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Button, StyleSheet, Text, View } from 'react-native';
 //import Button from '../src/components/Button';
 
@@ -7,7 +7,6 @@ export default function Home() {
     <View style={styles.container}>
       <Text style={styles.title}>Bienvenue sur GentleBaby3000</Text>
       <Button title="Créer un compte" onPress={() => router.push('/signup')} />
-      <Link href="/user/EditingProfileUser">Modification de mon profil utilisateur</Link>
     </View>
 
   );
