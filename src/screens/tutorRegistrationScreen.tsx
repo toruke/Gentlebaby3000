@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../config/firebaseConfig';
-import {View,Text,TextInput,TouchableOpacity,Image,FlatList,Modal,StyleSheet} from 'react-native';
+// src/screens/TutorRegistrationScreen.tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { createFamily } from '../services/familyService';
+import { onAuthStateChanged } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
+import { FlatList, Image, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
-import gtb2 from '../assets/images/gtb2.jpg';
-import gtb3 from '../assets/images/gtb3.jpg';
-import gtb4 from '../assets/images/gtb4.jpg';
-import AsyncStorage from '@react-native-async-storage/async-storage';
- 
 
-export default function TutorRegistration() {
+// Déplacer les images dans src/assets/
+import gtb2 from '../../assets/images/gtb2.jpg';
+import gtb3 from '../../assets/images/gtb3.jpg';
+import gtb4 from '../../assets/images/gtb4.jpg';
+
+import { auth } from '../../config/firebaseConfig';
+import { createFamily } from '../services/familyService';
+
+export default function TutorRegistrationScreen() {
   const [familyName, setFamilyName] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<string | undefined>(undefined);
   const [chosenDefault, setChosenDefault] = useState<number>(0);
@@ -28,7 +31,7 @@ export default function TutorRegistration() {
           text1: 'Erreur',
           text2: 'Vous devez être connecté pour créer une famille',
         });
-      // éventuellement router.push vers la page de login
+        // éventuellement router.push vers la page de login
       } else {
         setUser(u);
       }
@@ -76,7 +79,7 @@ export default function TutorRegistration() {
       });
     }
   };
-  
+
   const removeImage = () => {
     setSelectedPhoto(undefined);
     setChosenDefault(0);
@@ -95,7 +98,7 @@ export default function TutorRegistration() {
     }
 
     try {
-    // Vérifier si l'utilisateur est connecté
+      // Vérifier si l'utilisateur est connecté
       if (!user) {
         Toast.show({
           type: 'error',
@@ -118,7 +121,7 @@ export default function TutorRegistration() {
 
       setTimeout(() => {
         router.push({
-          pathname: '/familyWelcome',
+          pathname: '/family/family-welcome',
           params: { familyName },
         });
       }, 800);
@@ -127,7 +130,7 @@ export default function TutorRegistration() {
       setSelectedPhoto(undefined);
       setChosenDefault(0);
 
-    }catch (error: unknown) {
+    } catch (error: unknown) {
       const err = error as Error;
       console.error('Erreur createFamily:', err);
       Toast.show({

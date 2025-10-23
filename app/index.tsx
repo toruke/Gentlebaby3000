@@ -1,4 +1,4 @@
-import { router, Link } from 'expo-router';
+import { router } from 'expo-router';
 import { Button, StyleSheet, Text, View } from 'react-native';
 //import Button from '../src/components/Button';
 
@@ -7,21 +7,9 @@ export default function Index() {
     <View style={styles.container}>
       <Text style={styles.title}>Bienvenue sur GentleBaby3000</Text>
       <Button title="Créer un compte" onPress={() => router.push('./auth/signup')} />
-       <Link
-        href="/tutorRegistration"
-        style={{
-          backgroundColor: '#007bff',
-          color: '#fff',
-          paddingVertical: 12,
-          paddingHorizontal: 25,
-          borderRadius: 8,
-          fontWeight: '600',
-        }}
-      >
-      👨‍👩‍👦‍👦
-      </Link>
-    </View>
+      <Button title="Créer famille" onPress={() => router.push('./family/tutor-registration')} />
 
+    </View>
   );
 }
 

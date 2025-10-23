@@ -1,13 +1,13 @@
 // services/familyService.ts
-import { db, storage, auth } from '../config/firebaseConfig';
-import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { auth, db, storage } from '../../config/firebaseConfig';
 
 /**
  * Crée une nouvelle famille
  */
 export async function createFamily(familyName: string, imageUri?: string) {
-  const user = auth.currentUser; 
+  const user = auth.currentUser;
   if (!user) throw new Error('Utilisateur non connecté');
 
   let imageUrl = '';

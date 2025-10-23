@@ -1,8 +1,9 @@
+// src/screens/FamilyWelcomeScreen.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
-export default function FamilyWelcome() {
+export default function FamilyWelcomeScreen() {
   const router = useRouter();
   const { familyName } = useLocalSearchParams<{ familyName?: string }>(); // ✅ utilisation correcte
 
@@ -17,7 +18,7 @@ export default function FamilyWelcome() {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push('/')}
+        onPress={() => router.push('/family/family-welcome')}
       >
         <Text style={styles.buttonText}>Aller à l’accueil</Text>
       </TouchableOpacity>
