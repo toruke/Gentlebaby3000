@@ -46,13 +46,13 @@ const EditProfileForm: React.FC<EditProfilFormProps> = ( {onClose} ) => {
             autoCorrect={false}
             onChangeText={(text) => { setCurrentPassword(text); }}
             value={currentPassword} />
-          <Button title="Vérification" onPress={onSubmitPassword} />
+          <Button title="Vérifier mot de passe" onPress={onSubmitPassword} />
         </>)
       }
       {step === 'ready' &&
         (<>
           <View style={{ marginVertical: 10 }}>
-            <Button title="Modification mot de passe" onPress={() => { setStep('change'); }} />
+            <Button title="Modifier mot de passe" onPress={() => { setStep('change'); }} />
           </View>
 
         </>
@@ -79,9 +79,12 @@ const EditProfileForm: React.FC<EditProfilFormProps> = ( {onClose} ) => {
       {error.length > 0 &&
         (<Text style={styles.text}>{error}</Text>)
       }
-      <View style={{ marginVertical: 10 }}>
-        <Button title="Submit" onPress={onSubmit} />
-      </View>
+      {step === 'ready' &&
+        (<>
+          <View style={{ marginVertical: 10 }}>
+            <Button title="Submit" onPress={onSubmit} />
+          </View>
+        </>)}
     </View>
   );
 };
