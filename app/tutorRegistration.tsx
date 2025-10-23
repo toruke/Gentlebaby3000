@@ -1,17 +1,9 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  Image,
-  FlatList,
-  Modal,
-  StyleSheet,
-} from 'react-native';
+import {View,Text,TextInput,TouchableOpacity,Image,FlatList,Modal,StyleSheet} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { createFamily } from '../services/familyService';
+import Toast from 'react-native-toast-message';
 import gtb2 from '../assets/images/gtb2.jpg';
 import gtb3 from '../assets/images/gtb3.jpg';
 import gtb4 from '../assets/images/gtb4.jpg';
@@ -31,7 +23,11 @@ export default function TutorRegistration() {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission refusée', 'Vous devez autoriser l’accès à la galerie.');
+        Toast.show({
+          type: 'info',
+          text1: 'Permission refusée',
+          text2: 'Vous devez autoriser l’accès à la galerie.',
+        });
         return;
       }
 
@@ -49,7 +45,11 @@ export default function TutorRegistration() {
       }
     } catch (err) {
       console.error('Erreur pickImage:', err); // <-- utiliser la variable pour ESLint
-      Alert.alert('Erreur', 'Impossible d\'ouvrir la galerie.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Impossible d’ouvrir la galerie.',
+      });
     }
   };
   
@@ -58,21 +58,42 @@ export default function TutorRegistration() {
     setChosenDefault(0);
   };
 
+  const router = useRouter();
+
   const handleCreateFamily = async () => {
     if (!familyName.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un nom de famille');
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Veuillez entrer un nom de famille',
+      });
       return;
     }
     // Dans handleCreateFamily
     try {
       await createFamily(familyName); // ✅ on garde exactement le même appel
-      Alert.alert('Succès', 'Famille créée avec succès 🎉');
+      Toast.show({
+        type: 'success',
+        text1: 'Succès 🎉',
+        text2: 'Famille créée avec succès',
+      });
+
+      setTimeout(() => {
+        router.push({
+          pathname: '/familyWelcome',
+          params: { familyName },
+        });
+      }, 800);
       setFamilyName('');
       setSelectedPhoto(undefined);
       setChosenDefault(0);
     } catch (error) {
       console.error('Erreur createFamily:', error); // <-- utiliser la variable pour ESLint
-      Alert.alert('Erreur', 'Impossible de créer la famille');
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Impossible de créer la famille',
+      });
     }
 
   };
@@ -83,7 +104,7 @@ export default function TutorRegistration() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>👨‍👩‍👧 Créer une famille</Text>
+      <Text style={styles.header}>👨‍👩 Création d'une famille </Text>
 
       <View style={styles.card}>
         <Text style={styles.title}>Créer une famille</Text>
