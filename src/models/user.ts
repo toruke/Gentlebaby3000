@@ -9,6 +9,7 @@ export type User = {
 
 export type Membership = {
     userId: string;
+    familyId: string;  
     role: string;
     status: string;
     createdAt: Date;
