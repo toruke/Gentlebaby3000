@@ -7,7 +7,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
  * Crée une nouvelle famille
  */
 export async function createFamily(familyName: string, imageUri?: string) {
-  const user = auth.currentUser;
+  const user = auth.currentUser; 
   if (!user) throw new Error('Utilisateur non connecté');
 
   let imageUrl = '';
