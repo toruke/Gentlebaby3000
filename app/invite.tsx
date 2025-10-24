@@ -40,7 +40,26 @@ const Invite = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [invitedMembers, setInvitedMembers] = useState<Invitation[]>([]);
   const [qrCodeVisible,setQrCodeVisible] = useState<boolean>(false);
-  const [familyNameSelected, setFamilyNameSelected] = useState(''); // la famillies qui a été sélectionnée
+  const [families, setFamilies] = useState<{label:string,value:string}[]>([]); //Dropdown families
+  const [familySelected, setFamilySelected] = useState(''); //dropdown selected family
+
+  useEffect(() => {
+    const familiesData = onSnapshot(
+      collection(db, 'family'),
+      (querySnapshot) => {
+        const familiesList = querySnapshot.docs.map((doc) => ({
+          label: doc.data().name,
+          value: doc.id,
+        }));
+        setFamilies(familiesList);
+      },
+      (error) => {
+        console.error('Erreur lors de la récupération des familles :', error);
+      },
+    );
+
+    return () => familiesData();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -184,11 +203,11 @@ const Invite = () => {
           </View>
         </View>
 
+        {/* Family Dropdown */}
         <DropdownInput
-          placeholder="Family Name"
-          value={familyNameSelected}  // Chaîne sélectionnée, pas le tableau
-          onChangeText={setFamilyNameSelected}  // Met à jour la chaîne
-          placeholderTextColor="#999"
+          options={families}
+          selectedValue={familySelected}
+          onValueChange={setFamilySelected}
         />
 
         {/* Role Selection */}

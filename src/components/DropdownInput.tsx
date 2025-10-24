@@ -1,24 +1,22 @@
 import { Select } from 're-native-ui';
-import React, { useState } from 'react';
+import React from 'react';
 
-const DropdownInput = () =>{
+/*
+interface DropdownInputProps {
+  selectedValue : string;
+  options: { label: string; value: string }[];
+  onValueChange: (val: string) => void;
+}*/
 
-  const [country, setCountry] = useState('');
-
-  const countryOptions = [
-    { label: 'United States', value: 'us' },
-    { label: 'Canada', value: 'ca' },
-    { label: 'United Kingdom', value: 'uk' },
-    { label: 'Australia', value: 'au' },
-  ];
+const DropdownInput = ({ selectedValue , options, onValueChange }:{selectedValue:string, options:void[],onValueChange:(val:string)=>void}) => {
 
   return(
     <Select
-      label="Country"
-      placeholder="Select your country"
-      value={country}
-      onChange={setCountry}
-      options={countryOptions}
+      label="Family"
+      placeholder="Select your family"
+      value={selectedValue}
+      onChange={onValueChange}
+      options={options}
     />
 
   );
