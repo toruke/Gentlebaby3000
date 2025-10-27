@@ -4,5 +4,6 @@ export function isValidEmail(e: string) {
 
 export function verificationPassword(password: string) {
   const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[#?!@$%^&*-]).{8,}$/;
-  return passwordRegex.test(password);
+  const pwd = password.trim();
+  return passwordRegex.test(pwd);
 }
