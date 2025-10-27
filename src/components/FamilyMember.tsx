@@ -2,7 +2,8 @@ import { Link } from 'expo-router';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFamilyManagement } from '../hooks/useFamilyManagement';
-import { styles } from '../styles/FamilyManagementStyle';
+//import { styles } from '../styles/FamilyManagementStyle';
+import { styles } from '../styles/globalStyles';
 
 export type Device = {
   id: string;

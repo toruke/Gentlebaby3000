@@ -1,14 +1,14 @@
 import { Pressable, Text, View } from 'react-native';
 import { FamilyMembers } from '../components/FamilyMember';
 import { useFamilyManagement } from '../hooks/useFamilyManagement';
-import { styles } from '../styles/FamilyManagementStyle';
-
+import { styles } from '../styles/globalStyles';
+import {stylesFamily} from '../styles/FamilyManagementStyle';
 export default function FamilyManagement() {
   const { families, selectedFamily, family, loading, error, selectFamily } = useFamilyManagement();
 
   if (loading) {
     return (
-      <View style={styles.loading}>
+      <View style={stylesFamily.loading}>
         <Text >Chargement...</Text>
       </View>
     );
@@ -16,22 +16,26 @@ export default function FamilyManagement() {
   if (error) {
     return (
       <View>
-        <Text style={styles.error}>{error}</Text>
+        <Text style={stylesFamily.error}>{error}</Text>
       </View>
     );
   }
   if (families.length > 1 && selectedFamily === '') {
     return (
-      <View style={styles.multipleFamily}>
-        <Text style={{ fontWeight: 'bold' }}>Choisissez une famille :</Text>
-        {families.map(fam => (
-          <Pressable key={fam.id} onPress={() => selectFamily(fam.id)}>
-            <Text style={{ fontWeight: 'bold', marginVertical: 5 }}>
-              {`Famille ${fam.name}`}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <>
+        <View style={styles.header}>
+          <Text style={styles.greeting}>Choisissez une famille :</Text>
+        </View>
+        <View style={stylesFamily.multipleFamily}>
+          {families.map(fam => (
+            <Pressable
+              key={fam.id}
+              onPress={() => selectFamily(fam.id)}>
+              <Text style={stylesFamily.familyName}>{`Famille ${fam.name}`}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </>
     );
   }
   return <FamilyMembers familyMembers={family ?? []} />;
