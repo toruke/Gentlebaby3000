@@ -1,5 +1,4 @@
 import { db } from '@/config/firebaseConfig';
-import { resend } from '@/lib/resend';
 import Button from '@/src/components/Button';
 import DropdownInput from '@/src/components/DropdownInput';
 import QRModal from '@/src/components/qrCode';
@@ -41,23 +40,6 @@ const Invite = () => {
 
 
   const handleSendInvitation = () => {
-    // Logique pour envoyer l'invitation par email
-    resend.emails.send({
-      from: 'delivered@resend.dev', // email de test pour le developpement
-      to: email,
-      subject: 'Invitation à rejoindre GentleBaby3000',
-      html: `
-        <html>
-          <body>
-            <h1>Vous êtes invité à rejoindre GentleBaby3000</h1>
-            <p>Cliquez sur le lien ci-dessous pour accepter l'invitation :</p>
-            <a href="https://votre-app.com/invite?email=${encodeURIComponent(email)}&familyId=${encodeURIComponent(familySelected)}&role=${encodeURIComponent(role)}">
-              Accepter l'invitation
-            </a>
-          </body>
-        </html>
-      `,
-    });
   };
 
 

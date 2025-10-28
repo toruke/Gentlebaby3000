@@ -7,6 +7,9 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bienvenue sur GentleBaby3000</Text>
+      <Button title="Créer un compte" onPress={() => router.push('./auth/signup')} />
+      <Button title="Créer famille" onPress={() => router.push('./family/tutor-registration')} />
+
       <Button title="Créer un compte" onPress={() => router.push('/signup')} />
       <View style={{ height: 20 }} />
       <Button title="Mon Profil" onPress={() => router.push('/profils')} />
