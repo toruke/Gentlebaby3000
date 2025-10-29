@@ -12,6 +12,7 @@ export default function RootLayout() {
       <Stack.Screen name="family/tutor-registration/index" options={{ title: 'Créer une famille' }} />
       <Stack.Screen name="family/family-welcome/index" options={{ title: 'Bienvenue' }} />
       <Stack.Screen name="family/FamilyManagement" options={{ title: 'Gestion famille' }} />
+      <Stack.Screen name="family/ModifyRole" options={{ title: 'Modification du rôle' }} />
 
     </Stack>
   );

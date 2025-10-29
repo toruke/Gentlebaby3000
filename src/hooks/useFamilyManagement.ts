@@ -82,5 +82,9 @@ export const useFamilyManagement = () => {
     }
   };
 
-  return { families, selectedFamily, family, loading, error, selectFamily, getStatusColor, getStatusText, getRoleColor };
+  const getUpperName = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
+  return { families, selectedFamily, family, loading, error, selectFamily, getStatusColor, getStatusText, getRoleColor, getUpperName };
 };

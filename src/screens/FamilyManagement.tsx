@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import {  Text, View, TouchableOpacity } from 'react-native';
 import { FamilyMembers } from '../components/FamilyMember';
 import { useFamilyManagement } from '../hooks/useFamilyManagement';
 import { styles } from '../styles/globalStyles';
@@ -23,16 +23,18 @@ export default function FamilyManagement() {
   if (families.length > 1 && selectedFamily === '') {
     return (
       <>
-        <View style={styles.header}>
-          <Text style={styles.greeting}>Choisissez une famille :</Text>
-        </View>
-        <View style={stylesFamily.multipleFamily}>
+        <View>
+          <Text style={[styles.header, styles.greeting]}>Choix famille</Text>
+
+          <Text style={stylesFamily.text}>Choisissez une famille :</Text>
+
           {families.map(fam => (
-            <Pressable
+            <TouchableOpacity
+              style={stylesFamily.roleItem}
               key={fam.id}
               onPress={() => selectFamily(fam.id)}>
-              <Text style={stylesFamily.familyName}>{`Famille ${fam.name}`}</Text>
-            </Pressable>
+              <Text style={stylesFamily.roleText}>{`Famille ${fam.name}`}</Text>
+            </TouchableOpacity>
           ))}
         </View>
       </>

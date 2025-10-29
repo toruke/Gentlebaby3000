@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFamilyManagement } from '../hooks/useFamilyManagement';
@@ -14,7 +14,8 @@ export type Device = {
   lastSeen: string;
 };
 export type FamilyMember = {
-  id: string;
+  idUser: string;
+  idFamily: string;
   name: string;
   role: string;
   device?: Device;
@@ -26,7 +27,8 @@ type PropsFamilyMembers = {
 };
 
 export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) => {
-  const { getStatusColor, getStatusText, getRoleColor } = useFamilyManagement();
+  const { getStatusColor, getStatusText, getRoleColor, getUpperName } = useFamilyManagement();
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.container}>
@@ -61,7 +63,7 @@ export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) =
         <Text style={styles.sectionTitle}>Membres de la Famille</Text>
 
         {familyMembers.map((member) => (
-          <View key={member.id} style={styles.memberCard}>
+          <View key={member.idUser} style={styles.memberCard}>
             {/* En-tête du membre */}
             <View style={styles.memberHeader}>
               <View style={styles.memberInfo}>
@@ -72,8 +74,8 @@ export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) =
                 </View>
                 <View style={styles.memberDetails}>
                   <Text style={styles.memberName}>{member.name}</Text>
-                  <View style={[styles.roleBadge, { backgroundColor: getRoleColor(member.role) }]}>
-                    <Text style={styles.roleText}>{member.role}</Text>
+                  <View style={[styles.roleBadge, { backgroundColor: getRoleColor(getUpperName(member.role)) }]}>
+                    <Text style={styles.roleText}>{getUpperName(member.role)}</Text>
                   </View>
                 </View>
               </View>
@@ -122,11 +124,19 @@ export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) =
 
             <View style={styles.actionsContainer}>
               {!member.device && (
-                <TouchableOpacity key={member.id} style={styles.actionButton}>
+                <TouchableOpacity key={member.idUser} style={styles.actionButton}>
                   <Text style={styles.actionText}>Ajouter Appareil</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.actionButton}>
+              <TouchableOpacity style={styles.actionButton} onPress={() => router.push({
+                pathname:'/family/ModifyRole',
+                params: {
+                  idUser: member.idUser,
+                  idFamily: member.idFamily,
+                  name: member.name,
+                  role: member.role,
+                },
+              })}>
                 <Text style={styles.actionText}>Modifier</Text>
               </TouchableOpacity>
             </View>

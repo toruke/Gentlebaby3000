@@ -98,7 +98,8 @@ export async function getFamilySelectedService(id: string): Promise<FamilyMember
         : undefined;
 
       familyMembers.push({
-        id: memberData.userId,
+        idUser: memberData.userId,
+        idFamily: id,
         name: userData?.firstName + ' ' + userData?.lastName,
         role: memberData.role,
         device,

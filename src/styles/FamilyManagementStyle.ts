@@ -10,17 +10,23 @@ export const stylesFamily = StyleSheet.create({
   error:{
     color: 'red',
   },
-  multipleFamily: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-  },
-
-  familyName: {
+  text:{
     fontSize: 18,
+    marginBottom: 20,
+    marginTop: 20,
+    textAlign:'center',
     fontWeight: 'bold',
-    color: '#2d3748',
-    margin: 10,
+  },
+  roleItem: {
+    backgroundColor: '#f7fafc',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  roleText: {
+    fontSize: 18,
+    color: '#6b46c1',
+    textAlign: 'center',
   },
 });
