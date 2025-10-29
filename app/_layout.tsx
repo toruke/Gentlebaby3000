@@ -4,13 +4,15 @@ import '../global.css';
 export default function RootLayout() {
   return (
     <Stack screenOptions={{ headerTitleAlign: 'center' }}>
-      {/* Ici tu donnes un titre propre pour tes pages */}
       <Stack.Screen name="index" options={{ title: 'Accueil' }} />
 
-      <Stack.Screen name="(screens)/signup" options={{ title: 'Inscription' }} />
-      <Stack.Screen name="(screens)/profils" options={{ title: 'Mon profil' }} />
+      
+      <Stack.Screen name="auth/signup/index" options={{ title: 'Inscription' }} />
+      <Stack.Screen name="auth/profile/index" options={{ title: 'Mon profil' }} />
+      <Stack.Screen name="family/tutor-registration/index" options={{ title: 'Créer une famille' }} />
+      <Stack.Screen name="family/family-welcome/index" options={{ title: 'Bienvenue' }} />
       <Stack.Screen name="family/FamilyManagement" options={{ title: 'Gestion famille' }} />
+
     </Stack>
   );
 }
-

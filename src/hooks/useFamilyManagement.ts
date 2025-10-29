@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getFamilySelectedService, getFamilyService } from '../services/FamilyService';
+import { getFamilySelectedService, getFamilyService } from '../services/familyEditService';
 import { FamilyMember } from '../components/FamilyMember';
 
 export const useFamilyManagement = () => {

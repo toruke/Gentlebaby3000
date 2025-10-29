@@ -3,4 +3,7 @@ export type Family = {
     name: string;
     createdBy: string;
     createdAt: Date;
+    photoUrl?: string;
+    members: string[];
+    babies: string[];
 };

@@ -6,10 +6,10 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bienvenue sur GentleBaby3000</Text>
-      <Button title="Créer un compte" onPress={() => router.push('/signup')} />
+      <Button title="Créer un compte" onPress={() => router.push('./auth/signup')} />
+      <Button title="Créer famille" onPress={() => router.push('./family/tutor-registration')} />
       <Link href="/family/FamilyManagement">Gestion des rôles et des appareils</Link>
     </View>
-
   );
 }
 
