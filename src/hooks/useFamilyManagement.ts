@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { getFamilySelectedService, getFamilyService } from '../services/familyEditService';
 import { FamilyMember } from '../components/FamilyMember';
+import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 
 export const useFamilyManagement = () => {
   const [family, setFamily] = useState<FamilyMember[]>([]);
@@ -10,35 +12,53 @@ export const useFamilyManagement = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   
-  useEffect (() => {
-    const fetchFamily = async() =>{
-      try{
-        setLoading(true);
-        const familiesQuery = await getFamilyService();
-        if (familiesQuery.length === 0 ){
-          setError('Aucun membre trouvé');
-          return;
-        }
-        if (familiesQuery.length === 1){
-          const  familyQuery = await getFamilySelectedService(familiesQuery[0].id);
-          setFamily(familyQuery);
-          setSelectedFamily(familiesQuery[0].id);
-        }
-        else {
-          setFamilies(familiesQuery);
-        }
+  const {familyId} = useLocalSearchParams();
+  const familyIdRole = Array.isArray(familyId) ? familyId[0] : familyId;
+
+
+  const fetchFamilyManagement = useCallback(async () => {
+    try{
+      setLoading(true);
+      const familiesQuery = await getFamilyService();
+      
+      if (familiesQuery.length === 0 ){
+        setError('Aucun membre trouvé');
+        return;
       }
-      catch(error){
-        // eslint-disable-next-line no-console
-        console.error('Erreur Firebase: ' , error);
-        setError('Erreur lors de la récupération des membres de la famille');
+      
+      if (familiesQuery.length === 1){
+        const  familyQuery = await getFamilySelectedService(familiesQuery[0].id);
+        setFamily(familyQuery);
+        setSelectedFamily(familiesQuery[0].id);
       }
-      finally {
-        setLoading(false);
+      
+      else {
+        setFamilies(familiesQuery);
       }
-    };
-    fetchFamily();
+    }
+    catch(error){
+      // eslint-disable-next-line no-console
+      console.error('Erreur Firebase: ' , error);
+      setError('Erreur lors de la récupération des membres de la famille');
+    }
+    finally {
+      setLoading(false);
+    }
+    
   },[]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (familyIdRole){
+        selectFamily(familyIdRole);
+      }
+      else {
+        fetchFamilyManagement();
+
+      }
+
+    }, [fetchFamilyManagement, familyIdRole]),
+  );
 
   const selectFamily = async(familyId : string) => {
     try{
@@ -55,7 +75,6 @@ export const useFamilyManagement = () => {
       setLoading(false);
     }
   };
-
 
   const getStatusColor = (status: string) => {
     switch (status) {

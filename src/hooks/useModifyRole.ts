@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Alert } from 'react-native';
 import { updateRoleUser } from '../services/ModifyRoleService';
 
@@ -20,7 +20,7 @@ export const useModifyRole = () =>{
       else{
         Alert.alert('Pas de changement', 'Le rôle est déjà celui sélectionné');
       }
-
+      router.push({ pathname: '/family/FamilyManagement', params: {refresh :Date.now(), familyId}});
     }
     catch (error){
       console.log(error);

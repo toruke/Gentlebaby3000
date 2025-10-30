@@ -137,7 +137,7 @@ export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) =
                   role: member.role,
                 },
               })}>
-                <Text style={styles.actionText}>Modifier</Text>
+                <Text style={styles.actionText}>Modifier Rôle</Text>
               </TouchableOpacity>
             </View>
           </View>
