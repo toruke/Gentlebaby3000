@@ -17,8 +17,18 @@ export const useModifyRole = () =>{
       if (roleModify.includes('succès')){
         Alert.alert('Succès', `${name} a maintenant le rôle de ${roleSelected}.`);
       }
-      else{
+      else if (roleModify.includes('Accès refusé')){
+        Alert.alert('Accès refusé', 'Seuls les tuteurs peuvent modifier les rôles');
+      }
+      else if (roleModify.includes('sélectionné')) {        
         Alert.alert('Pas de changement', 'Le rôle est déjà celui sélectionné');
+      }
+      else if (roleModify.includes('modifier votre propre rôle')) {        
+        Alert.alert('Pas de changement', 'Vous ne pouvez pas modifié votre propre rôle');
+      }
+      else {
+        Alert.alert('Erreur', 'Problème de connexion ou erreur lié à la base de donnée');
+
       }
       router.push({ pathname: '/family/FamilyManagement', params: {refresh :Date.now(), familyId}});
     }
