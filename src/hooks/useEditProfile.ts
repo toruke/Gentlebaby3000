@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { isValidEmail, verificationPassword } from '../utils/validation';
 import { User } from '../components/EditProfileForm';
-import { getProfileUser, getVerificationPassword, updateProfileUser } from '../services/EditProfileService';
+import { getProfileUser, getVerificationPassword, updateProfileUser, updateTheEmail } from '../services/EditProfileService';
+import { auth } from '@/config/firebaseConfig';
+import { Alert } from 'react-native';
 
 
 export const useEditProfile =  (onClose: () => void) => {
@@ -15,37 +17,62 @@ export const useEditProfile =  (onClose: () => void) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
+  const [isVerified, setIsVerified] = useState(false);
   
+  const syncMail = async () => {
+    console.log('syncMail déclenché');
+    const userNew = auth.currentUser;
+    if (!userNew) throw new Error('Utilisateur non connecté');
+
+    await userNew.reload();
+    const refreshedEmail = userNew.email;
+
+    const snap = await getProfileUser();
+    if (snap.empty) return;
+
+    const userDoc = snap.docs[0];
+    const firestoreEmail = userDoc.data().email;
+
+    if (refreshedEmail && refreshedEmail !== firestoreEmail){
+      const resultMail = await updateTheEmail(userDoc.id, refreshedEmail);
+      setEditMailAddress(refreshedEmail);
+      setUser((prev) => prev ? { ...prev, email: refreshedEmail } : undefined);
+      if (resultMail.includes('réussie')){
+        Alert.alert('Succès', 'L\'email a bien été vérifiée et mis à jour');
+        await fetchUser();
+      }
+    }
+  };
+
+  const fetchUser = async() => {
+    try {
+      const snapUser = await getProfileUser();
+      if (snapUser.empty) {
+        setError('Une erreur est survenue lors de la récupération des données utilisateurs');
+        return ;
+      }
+      const userDoc = snapUser.docs[0];
+      const userData = userDoc.data();
+      console.log(userData);
+
+      const fetchedUser: User = {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+      };
+      setEditFirstname(fetchedUser.firstName);
+      setEditLastname(fetchedUser.lastName);
+      setEditMailAddress(fetchedUser.email);
+      setUser(fetchedUser);
+      console.log(fetchedUser);
+
+    }
+    catch(error){
+      console.error('Erreur Firebase: ' , error);
+      setError('Erreur lors de la récupération des données utilisateurs');
+    }
+  };
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const snapUser = await getProfileUser();
-        if (snapUser.empty) {
-          setError('Une erreur est survenue lors de la récupération des données utilisateurs');
-          return ;
-        }
-        const userDoc = snapUser.docs[0];
-        const userData = userDoc.data();
-        console.log(userData);
-
-        const fetchedUser: User = {
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          email: userData.email,
-        };
-        setEditFirstname(fetchedUser.firstName);
-        setEditLastname(fetchedUser.lastName);
-        setEditMailAddress(fetchedUser.email);
-        setUser(fetchedUser);
-        console.log(fetchedUser);
-
-      }
-      catch(error){
-        console.error('Erreur Firebase: ' , error);
-        setError('Erreur lors de la récupération des données utilisateurs');
-      }
-    };
     fetchUser();
   },[]);
 
@@ -76,9 +103,15 @@ export const useEditProfile =  (onClose: () => void) => {
         return;
       }
     }
+  
+    if (editMailAddress !== user.email && !isVerified) {
+      setError('Veuillez confirmer votre mot de passe avant de modifier votre adresse email.');
+      return;
+    }
     const result = await updateProfileUser(editFirstname,editLastname,editMailAddress, step === 'change' ? newPassword : undefined);
     if (result.includes('réussie')) {
       setError('');
+      setIsVerified(false);
 
       const updatedUser: User = {
         firstName: editFirstname,
@@ -86,6 +119,11 @@ export const useEditProfile =  (onClose: () => void) => {
         email: editMailAddress,
       };
       setUser(updatedUser);
+      onClose();
+    }
+    else if (result.includes('email de vérification')) {
+      setError('');
+      alert(result); 
       onClose();
     }
     else {
@@ -97,6 +135,7 @@ export const useEditProfile =  (onClose: () => void) => {
   const onSubmitPassword = async () => {
     const passwordVerif = await getVerificationPassword(currentPassword);
     if (passwordVerif) {
+      setIsVerified(true);
       setStep('ready');
       setError('');
     }
@@ -105,5 +144,5 @@ export const useEditProfile =  (onClose: () => void) => {
     }
   };
 
-  return { user, onSubmit, onSubmitPassword, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setStep, setCurrentPassword, setNewPassword, setConfirmPassword, error, setError };
+  return { user, onSubmit, onSubmitPassword, syncMail, fetchUser, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setStep, setCurrentPassword, setNewPassword, setConfirmPassword, error, setError };
 };

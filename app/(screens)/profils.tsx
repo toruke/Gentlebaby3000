@@ -2,10 +2,12 @@ import { StyleSheet, Text, View } from 'react-native';
 import ROInput from '../../src/components/ROInput';
 import { useCurrentUserProfile } from '../../src/hooks/useCurrentUserProfile';
 import { Link } from 'expo-router';
+import Button from '@/src/components/Button';
+import { useEditProfile } from '@/src/hooks/useEditProfile';
 
 export default function Profil() {
   const { firstName, lastName, email, loading} = useCurrentUserProfile();
-  
+  const {syncMail} = useEditProfile(()=>{});
   
   if (loading) {
     return <View style={styles.center}><Text>Chargement…</Text></View>;
@@ -20,6 +22,7 @@ export default function Profil() {
       <Link href="/user/EditingProfileUser">
         <Text style={{ color: 'blue', marginTop: 20, fontSize:18}}>Modifier profil</Text>
       </Link>
+      <Button title="J'ai confirmé mon email" onPress={syncMail}></Button>
     </View>
   );
 }

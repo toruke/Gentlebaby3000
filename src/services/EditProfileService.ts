@@ -2,7 +2,7 @@
 import { collection, where, getDocs, doc, query, updateDoc, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { db, auth } from '@/config/firebaseConfig';
 //import { db } from '@/config/firebaseConfig';
-import { EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification, updateEmail, updatePassword } from 'firebase/auth';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, verifyBeforeUpdateEmail } from 'firebase/auth';
 
 const USERS_COLLECTION = 'user';
 type UserUpdate = {
@@ -50,6 +50,21 @@ export async function updateThePassword(password? : string) {
 
 
     await user.reload();
+    return 'La modification est réussie';
+  }
+  catch (error) {
+    console.log(error);
+    return 'La modification a échoué';
+  }
+
+};
+export async function updateTheEmail(userId: string, email : string) {  
+
+  if (!email) return 'Aucun email fourni.';
+
+  try{
+    await updateDoc(doc(db, USERS_COLLECTION, userId), {email});
+
     return 'La modification est réussie';
   }
   catch (error) {
@@ -107,16 +122,21 @@ export async function updateProfileUser(firstname: string, lastname: string, ema
     }
     if (data.email !== email){
       try {
+        const isEmailPasswordProvider = user.providerData.some(
+          (provider) => provider.providerId === EmailAuthProvider.PROVIDER_ID);
+        if (!isEmailPasswordProvider) {
+          return 'Changement d’email impossible : votre compte n’utilise pas le provider Email/Password.';
+        }
+
         if (!user.emailVerified) {
           return 'Veuillez vérifier votre email avant de le modifier.';
         }
-        await updateEmail(user, email);
-        update.email = email;
-        await sendEmailVerification(user);
-        alert('Un email de vérification a été envoyé à votre adresse.');
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await verifyBeforeUpdateEmail(user, email);
+        return 'Un email de vérification a été envoyé à votre nouvelle adresse. Veuillez la confirmer pour finaliser le changement.';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
+        console.error('Erreur complète:', JSON.stringify(error, null, 2));
         console.log(error);
         if (error.code === 'auth/operation-not-allowed') {
           return 'Changement d’email impossible : activation du provider Email/Password requise.';
