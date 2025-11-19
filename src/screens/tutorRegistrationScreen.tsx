@@ -121,7 +121,7 @@ export default function TutorRegistrationScreen() {
 
       setTimeout(() => {
         router.push({
-          pathname: '/family/family-welcome',
+          pathname: '/(tabs)',
           params: { familyName },
         });
       }, 800);

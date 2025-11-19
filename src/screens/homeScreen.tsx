@@ -73,7 +73,7 @@ export default function HomeScreen() {
               
               <TouchableOpacity 
                 style={styles.profileButton}
-                onPress={() => router.push('/auth/profile')}
+                onPress={() => router.push('/(tabs)/profile')}
               >
                 <Text style={styles.profileButtonText}>👤</Text>
               </TouchableOpacity>

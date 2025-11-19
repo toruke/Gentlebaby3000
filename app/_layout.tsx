@@ -2,11 +2,16 @@ import { Stack } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import BackgroundShapes from '../src/components/backgroundShapes';
 import { useAuthRedirect } from '../src/hooks/useAuthRedirect';
+import LoadingScreen from '../src/components/loadingScreen';
 import '../global.css';
 
 export default function RootLayout() {
-  // Utilise le hook de redirection dans le layout racine
-  useAuthRedirect();
+  const { isLoading } = useAuthRedirect();
+
+  // Afficher un écran de chargement pendant la vérification de l'authentification
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <View style={styles.container}>
@@ -41,26 +46,6 @@ export default function RootLayout() {
             name="auth/signup/index" 
             options={{ 
               title: 'Inscription',
-              headerBackTitle: 'Retour',
-              headerTransparent: true,
-              headerTintColor: '#1e293b',
-            }} 
-          />
-          
-          <Stack.Screen 
-            name="auth/profile/index" 
-            options={{ 
-              title: 'Mon profil',
-              headerBackTitle: 'Retour',
-              headerTransparent: true,
-              headerTintColor: '#1e293b',
-            }} 
-          />
-          
-          <Stack.Screen 
-            name="family/tutor-registration/index" 
-            options={{ 
-              title: 'Créer une famille',
               headerBackTitle: 'Retour',
               headerTransparent: true,
               headerTintColor: '#1e293b',

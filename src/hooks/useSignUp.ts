@@ -79,12 +79,12 @@ export function useSignUp() {
 
       if (Platform.OS === 'web') {
         notify('Compte créé avec succès', `Bienvenue, ${fullName} !`);
-        router.replace('/auth/profile');
+        router.replace('/(tabs)');
       } else {
         Alert.alert(
           'Succès',
           `Compte créé pour ${user.email ?? e}`,
-          [{ text: 'OK', onPress: () => router.replace('/auth/profile') }],
+          [{ text: 'OK', onPress: () => router.replace('/(tabs)') }],
         );
       }
     } catch (err: unknown) {

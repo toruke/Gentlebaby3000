@@ -1,43 +1,37 @@
-/* eslint-disable no-console */
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'expo-router';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useRouter, useSegments } from 'expo-router';
 import { auth } from '../../config/firebaseConfig';
-
-const PUBLIC_ROUTES = ['/', '/auth/login/index', '/auth/signup/index'];
-const PROTECTED_ROUTES = ['/(tabs)', '/family/tutor-registration/index', '/auth/profile/index'];
 
 export function useAuthRedirect() {
   const router = useRouter();
-  const pathname = usePathname();
-  const [loading, setLoading] = useState(true);
+  const segments = useSegments();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setLoading(false);
+      setIsLoading(false);
       
-      const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
-      const isProtectedRoute = PROTECTED_ROUTES.some(route => 
-        pathname.startsWith(route),
-      );
+      const inAuthGroup = segments[0] === 'auth';
+      const isWelcomeScreen = segments[0] === undefined;
 
       if (user) {
-        // Utilisateur connecté → redirige depuis les pages publiques
-        if (isPublicRoute) {
-          console.log('🔐 Utilisateur connecté, redirection depuis:', pathname);
+        // Utilisateur connecté
+        if (inAuthGroup || isWelcomeScreen) {
+          // Rediriger vers les tabs si on est sur l'auth ou la page d'accueil
           router.replace('/(tabs)');
         }
       } else {
-        // Utilisateur NON connecté → redirige depuis les pages protégées
-        if (isProtectedRoute) {
-          console.log('🚫 Utilisateur non connecté, redirection depuis:', pathname);
+        // Utilisateur non connecté
+        if (!inAuthGroup && !isWelcomeScreen) {
+          // Rediriger vers la page de bienvenue si on n'est pas dans l'auth
           router.replace('/');
         }
       }
     });
 
-    return () => unsubscribe();
-  }, [pathname, router]);
+    return unsubscribe;
+  }, [segments, router]);
 
-  return { loading };
+  return { isLoading };
 }
