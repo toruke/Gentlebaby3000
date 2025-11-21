@@ -11,7 +11,6 @@ export default function Index() {
       }}
     >
      <Text>Acceuil</Text>
-       <Link href="/connexion">Se connecter</Link>
     </View>
   );
 }
