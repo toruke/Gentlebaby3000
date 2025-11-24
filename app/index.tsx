@@ -8,7 +8,7 @@ export default function Index() {
       <Text style={styles.title}>Bienvenue sur GentleBaby3000</Text>
       <Button title="Créer un compte" onPress={() => router.push('./auth/signup')} />
 
-      <Link href="./family/tabs/dashboard" asChild>
+      <Link href="./family/[id]/(tabs)/dashboard" asChild>
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Accéder à mon espace famille</Text>
         </TouchableOpacity>

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function HealthScreen() {
+export default function ShiftsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tour de Garde</Text>

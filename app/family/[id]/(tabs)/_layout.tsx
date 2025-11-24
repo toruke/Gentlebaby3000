@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function TabLayout() {
+export default function FamilyTabLayout() {
+  
   return (
     <Tabs
       screenOptions={{
@@ -12,10 +13,16 @@ export default function TabLayout() {
           borderTopWidth: 1,
           borderTopColor: '#e2e8f0',
         },
+        // PERSONNALISER LE HEADER
+        headerTitle: 'Ma Famille', // ← Titre fixe
+        headerTitleAlign: 'center',
         headerStyle: {
           backgroundColor: '#6b46c1',
         },
         headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       }}
     >
       <Tabs.Screen

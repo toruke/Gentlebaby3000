@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function HealthScreen() {
+export default function ManagementScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Santé du Bébé</Text>
+      <Text style={styles.title}>Appareils et Utilisateurs</Text>
       <Text style={styles.message}>Bientôt disponible</Text>
     </View>
   );
