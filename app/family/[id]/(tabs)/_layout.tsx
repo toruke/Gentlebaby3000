@@ -28,7 +28,7 @@ export default function FamilyTabLayout() {
       <Tabs.Screen
         name="dashboard/index"
         options={{
-          title: 'Accueil',
+          title: 'Acceuil',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),

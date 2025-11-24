@@ -1,12 +1,10 @@
 import { Stack } from 'expo-router';
 
-export default function FamilyDetailLayout() {
+export default function FamilyLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {/* Tabs de la famille */}
-      <Stack.Screen name="(tabs)" />
-      
-      {/* Paramètres de la famille */}
+      {/* UTILISER LES ROUTES RÉELLES */}
+      <Stack.Screen name="[id]/(tabs)" />
       <Stack.Screen 
         name="settings" 
         options={{ 
