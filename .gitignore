@@ -46,3 +46,5 @@ app-example
 .idea/
 
 test.tsx
+
+coverage/
