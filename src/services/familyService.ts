@@ -1,11 +1,9 @@
-// services/familyService.ts
+
 import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { auth, db, storage } from '../../config/firebaseConfig';
 
-/**
- * Crée une nouvelle famille
- */
+
 export async function createFamily(familyName: string, imageUri?: string) {
   const user = auth.currentUser;
   if (!user) throw new Error('Utilisateur non connecté');
@@ -48,9 +46,7 @@ export async function createFamily(familyName: string, imageUri?: string) {
   return familyRef.id;
 }
 
-/**
- * Supprime une photo de famille du Storage Firebase
- */
+
 export async function deleteFamilyPhoto(photoUrl: string) {
   try {
     const photoRef = ref(storage, photoUrl);
