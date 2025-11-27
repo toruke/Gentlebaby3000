@@ -20,6 +20,12 @@ const firebaseConfig = {
 // CORRECTION : Auth avec persistence
 
 export const app = initializeApp(firebaseConfig);
+
+// CORRECTION : Auth avec persistence
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+});
+
 export const db = getFirestore(app);
 export const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
