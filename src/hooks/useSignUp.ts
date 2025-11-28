@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+ 
 import { router } from 'expo-router';
 import { fetchSignInMethodsForEmail, updateProfile } from 'firebase/auth';
 import { useState } from 'react';

@@ -1,17 +1,8 @@
-export interface Family {
-  id: string;
-  familyName: string;
-  createdBy: string;
-  members: FamilyMember[];
-  children: ChildProfile[];
-  settings: FamilySettings;
-}
-
 export interface FamilyMember {
   id: string;
   firstName: string;
   lastName: string;
-  role: 'TUTOR' | 'HELPER' | 'VIEWER';
+  role: 'tuteur' | 'tuteur secondaire' | 'membre' | 'enfant';
   email: string;
   avatar?: string;
 }
@@ -47,5 +38,4 @@ export type Family = {
     createdAt: Date;
     photoUrl?: string;
     members: string[];
-    babies: string[];
 };

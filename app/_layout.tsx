@@ -1,36 +1,5 @@
 import { Stack } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
-<<<<<<< feature/US-117
-
-export default function RootLayout() {
-  return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Stack screenOptions={{ headerTitleAlign: 'center' }}>
-          {/* Page de bienvenue */}
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          
-          {/* Routes d'authentification */}
-          <Stack.Screen 
-            name="auth/signup/index" 
-            options={{ 
-              title: 'Inscription',
-              headerBackTitle: 'Retour',
-            }} 
-          />
-          <Stack.Screen 
-            name="auth/profile/index" 
-            options={{ 
-              title: 'Mon profil', 
-              headerBackTitle: 'Retour',
-            }} 
-          />
-          
-          {/* Route famille */}
-          <Stack.Screen 
-            name="family" 
-            options={{ headerShown: false }} 
-=======
 import BackgroundShapes from '../src/components/backgroundShapes';
 import { useAuthRedirect } from '../src/hooks/useAuthRedirect';
 import LoadingScreen from '../src/components/loadingScreen';
@@ -88,7 +57,6 @@ export default function RootLayout() {
             options={{ 
               headerShown: false, 
             }} 
->>>>>>> dev
           />
         </Stack>
       </View>
@@ -103,11 +71,7 @@ const styles = StyleSheet.create({
   background: {
     ...StyleSheet.absoluteFillObject,
   },
-<<<<<<< feature/US-117
-  content: {
-=======
   stackContainer: {
->>>>>>> dev
     flex: 1,
     backgroundColor: 'transparent',
   },

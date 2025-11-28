@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../../config/firebaseConfig';
 
 interface Family {
@@ -10,21 +10,25 @@ interface Family {
   name: string;
   photoUrl?: string;
   createdBy: string;
+  memberIds: string[];
 }
 
 export default function HomeScreen() {
   const [user, setUser] = useState(auth.currentUser);
   const [families, setFamilies] = useState<Family[]>([]);
+  const [loading, setLoading] = useState(true); // 🔹 Ajout d'un état de chargement
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (user) {
-        // Charger les familles de l'utilisateur
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      
+      if (currentUser) {
+        // 🔹 C'est ICI que se trouve la correction importante :
+        // On cherche dans 'memberIds' (le tableau de strings) et non plus 'members'
         const familiesQuery = query(
-          collection(db, 'families'),
-          where('members', 'array-contains', user.uid),
+          collection(db, 'family'),
+          where('memberIds', 'array-contains', currentUser.uid),
         );
 
         const unsubscribeFamilies = onSnapshot(familiesQuery, (snapshot) => {
@@ -32,10 +36,18 @@ export default function HomeScreen() {
             id: doc.id,
             ...doc.data(),
           })) as Family[];
+          
           setFamilies(familiesData);
+          setLoading(false); // Fin du chargement
+        }, (error) => {
+          console.error('Erreur récup familles:', error);
+          setLoading(false);
         });
 
         return () => unsubscribeFamilies();
+      } else {
+        setFamilies([]);
+        setLoading(false);
       }
     });
 
@@ -52,7 +64,7 @@ export default function HomeScreen() {
   };
 
   const handleFamilyPress = (familyId: string) => {
-    router.push(`/family/${familyId}`);
+    router.push(`/family/${familyId}/(tabs)/dashboard`);
   };
 
   return (
@@ -60,33 +72,17 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mes Familles</Text>
-        
+
         <View style={styles.headerActions}>
           {user ? (
-            <>
-              <TouchableOpacity 
-                style={styles.createButton}
-                onPress={() => router.push('/family/tutor-registration')}
-              >
-                <Text style={styles.createButtonText}>Créer une famille</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.profileButton}
-                onPress={() => router.push('/(tabs)/profile')}
-              >
-                <Text style={styles.profileButtonText}>👤</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.logoutButton}
-                onPress={handleLogout}
-              >
-                <Text style={styles.logoutButtonText}>🚪</Text>
-              </TouchableOpacity>
-            </>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutButtonText}>🚪</Text>
+            </TouchableOpacity>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.loginButton}
               onPress={() => router.push('/auth/login')}
             >
@@ -97,8 +93,13 @@ export default function HomeScreen() {
       </View>
 
       {/* Liste des familles */}
-      <ScrollView style={styles.familiesContainer}>
-        {families.length === 0 ? (
+      <View style={styles.familiesContainer}>
+        {loading ? (
+          // 🔹 Indicateur de chargement
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color="#007bff" />
+          </View>
+        ) : families.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateTitle}>Aucune famille</Text>
             <Text style={styles.emptyStateText}>
@@ -106,7 +107,7 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             {families.map((family) => (
               <TouchableOpacity
                 key={family.id}
@@ -115,20 +116,22 @@ export default function HomeScreen() {
               >
                 <View style={styles.familyImage}>
                   {family.photoUrl ? (
-                    <Image 
-                      source={{ uri: family.photoUrl }} 
+                    <Image
+                      source={{ uri: family.photoUrl }}
                       style={styles.familyPhoto}
                     />
                   ) : (
-                    <Text style={styles.familyEmoji}>👶</Text>
+                    <Text style={styles.familyEmoji}>🏠</Text>
                   )}
                 </View>
-                <Text style={styles.familyName}>{family.name}</Text>
+                <Text style={styles.familyName} numberOfLines={1}>
+                  {family.name}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -159,25 +162,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  createButton: {
-    backgroundColor: '#007bff',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  profileButton: {
-    padding: 8,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 20,
-  },
-  profileButtonText: {
-    fontSize: 16,
-  },
   logoutButton: {
     padding: 8,
     backgroundColor: '#fef2f2',
@@ -199,13 +183,21 @@ const styles = StyleSheet.create({
   },
   familiesContainer: {
     flex: 1,
-    padding: 20,
+    paddingVertical: 20,
+  },
+  scrollContent: {
+    paddingHorizontal: 20, // Padding pour le début et fin du scroll horizontal
+  },
+  loadingState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 100,
+    marginTop: 50,
   },
   emptyStateTitle: {
     fontSize: 20,
@@ -224,7 +216,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     padding: 16,
-    marginRight: 16,
+    marginRight: 16, // Espace entre les cartes
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

@@ -1,48 +1,116 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { doc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { db, auth } from '../../../config/firebaseConfig';
+import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore'; 
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { auth, db } from '../../../config/firebaseConfig';
 import { WelcomeHeader } from '../../components/family/welcomeHeader';
-import { Family } from '../../models/family';
+
+// ---------------------------------------------------------
+// 🛠️ DÉFINITION DES TYPES (À déplacer idéalement dans models/family.ts)
+// ---------------------------------------------------------
+
+export interface FamilyMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  displayName?: string;
+  // Ajoute d'autres champs si nécessaire (ex: email, avatarUrl)
+}
+
+export interface Child {
+  id: string;
+  firstName: string;
+  lastName: string;
+  birthDate: Timestamp | Date; 
+}
+
+// On définit le type complet attendu par le Dashboard
+interface DashboardData {
+  id?: string;
+  familyName?: string;
+  createdBy?: string;
+  settings?: Record<string, unknown>; // Mieux que 'any'
+  members: FamilyMember[];
+  children: Child[];
+}
+
+// ---------------------------------------------------------
 
 export default function FamilyDashboardScreen() {
   const { id: familyId } = useLocalSearchParams();
-  const [familyData, setFamilyData] = useState<Family | null>(null);
+  
+  // États typés correctement
+  const [familyInfo, setFamilyInfo] = useState<Partial<DashboardData> | null>(null);
+  const [membersList, setMembersList] = useState<FamilyMember[]>([]);
+  // Si tu gères les enfants séparément plus tard, garde ce state, sinon il vient de familyInfo
+  // const [childrenList, setChildrenList] = useState<Child[]>([]); 
+  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [familyLoaded, setFamilyLoaded] = useState(false);
+  const [membersLoaded, setMembersLoaded] = useState(false);
 
   useEffect(() => {
     if (!familyId) return;
 
-    // 1. Écouter l'authentification utilisateur
+    // 1. Auth
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
     });
 
-    // 2. Écouter les changements de la famille
-    const familyRef = doc(db, 'families', familyId as string);
+    // 2. Document Famille
+    const familyRef = doc(db, 'family', familyId as string);
     const unsubscribeFamily = onSnapshot(familyRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setFamilyData({
+        setFamilyInfo({
           id: docSnap.id,
           familyName: data.name,
           createdBy: data.createdBy,
-          members: data.members || [],
-          children: data.children || [],
+          // On force le typage ici car Firestore ne renvoie pas des types stricts
+          children: (data.children || []) as Child[], 
           settings: data.settings || {},
         });
       }
-      setLoading(false);
+      setFamilyLoaded(true);
+    });
+
+    // 3. Sous-collection Members
+    const membersRef = collection(db, 'family', familyId as string, 'members');
+    const unsubscribeMembers = onSnapshot(membersRef, (querySnapshot) => {
+      const members: FamilyMember[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const names = (data.displayName || 'Utilisateur Inconnu').split(' ');
+        
+        return {
+          id: doc.id,
+          firstName: data.firstName || names[0], 
+          lastName: data.lastName || (names.length > 1 ? names.slice(1).join(' ') : ''),
+          role: data.role || 'unknown',
+          displayName: data.displayName,
+        };
+      });
+      
+      setMembersList(members);
+      setMembersLoaded(true);
     });
 
     return () => {
       unsubscribeAuth();
       unsubscribeFamily();
+      unsubscribeMembers();
     };
   }, [familyId]);
+
+  useEffect(() => {
+    if (familyLoaded && membersLoaded) {
+      setLoading(false);
+    }
+  }, [familyLoaded, membersLoaded]);
+
 
   if (loading) {
     return (
@@ -53,7 +121,7 @@ export default function FamilyDashboardScreen() {
     );
   }
 
-  if (!familyData) {
+  if (!familyInfo) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Famille non trouvée</Text>
@@ -61,13 +129,19 @@ export default function FamilyDashboardScreen() {
     );
   }
 
-  // Trouver l'utilisateur actuel dans les membres de la famille
-  const findCurrentUserInFamily = () => {
-    if (!currentUser || !familyData.members) return null;
-    
-    return familyData.members.find(member => 
-      member.id === currentUser.uid,
-    );
+  // 4. Fusion des données
+  const familyData: DashboardData = {
+    members: membersList,
+    children: familyInfo.children || [],
+    familyName: familyInfo.familyName,
+    id: familyInfo.id,
+    createdBy: familyInfo.createdBy,
+    settings: familyInfo.settings,
+  };
+
+  const findCurrentUserInFamily = (): FamilyMember | undefined => {
+    if (!currentUser || !membersList) return undefined;
+    return membersList.find(member => member.id === currentUser.uid);
   };
 
   const userInFamily = findCurrentUserInFamily();
@@ -76,13 +150,13 @@ export default function FamilyDashboardScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        {/* HEADER DE BIENVENUE */}
-        <WelcomeHeader 
-          userName={userName} 
-          familyName={familyData.familyName} 
+        {/* HEADER */}
+        <WelcomeHeader
+          userName={userName}
+          familyName={familyData.familyName || 'Ma Famille'}
         />
 
-        {/* SECTION STATISTIQUES */}
+        {/* STATS */}
         <View style={styles.stats}>
           <Text style={styles.statsTitle}>Aperçu de la famille</Text>
           <View style={styles.statsGrid}>
@@ -96,33 +170,39 @@ export default function FamilyDashboardScreen() {
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-                {familyData.members.filter(m => m.role === 'TUTOR').length}
+                {familyData.members.filter((m) => 
+                  ['TUTOR', 'tuteur', 'Tuteur principal'].includes(m.role),
+                ).length}
               </Text>
               <Text style={styles.statLabel}>Tuteurs</Text>
             </View>
           </View>
         </View>
 
-        {/* CONTENU ADDITIONNEL */}
+        {/* SECTIONS LISTES */}
         <View style={styles.sections}>
+          
+          {/* Section Membres */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>👥 Membres de la famille</Text>
-            {familyData.members.map(member => (
+            {familyData.members.map((member) => (
               <View key={member.id} style={styles.memberItem}>
-                <Text style={styles.memberName}>
-                  {member.firstName} {member.lastName}
-                </Text>
-                <Text style={styles.memberRole}>
-                  {member.role === 'TUTOR' ? '👑 Tuteur' : 
-                    member.role === 'HELPER' ? '👤 Aide' : '👀 Observateur'}
-                </Text>
+                <View>
+                  <Text style={styles.memberName}>
+                    {member.firstName} {member.lastName}
+                  </Text>
+                  <Text style={styles.memberRole}>
+                    {getRoleLabel(member.role)}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>
 
+          {/* Section Enfants */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>👶 Enfants</Text>
-            {familyData.children.map(child => (
+            {familyData.children.map((child) => (
               <View key={child.id} style={styles.childItem}>
                 <Text style={styles.childName}>
                   {child.firstName} {child.lastName}
@@ -139,19 +219,51 @@ export default function FamilyDashboardScreen() {
   );
 }
 
-// Helper pour calculer l'âge
-const calculateAge = (birthDate: Date): number => {
+// ---------------------------------------------------------
+// 🧹 Helpers extraits pour plus de propreté
+// ---------------------------------------------------------
+
+// Convertit les rôles techniques en libellés lisibles
+const getRoleLabel = (role: string): string => {
+  switch (role) {
+  case 'tuteur':
+  case 'Tuteur principal':
+  case 'admin':
+    return '👑 Tuteur';
+  case 'tuteur secondaire':
+    return '👑 Tuteur secondaire';
+  case 'membre':
+    return '👤 Aide';
+  case 'enfant':
+    return '👶 Enfant';
+  default:
+    return '❓ Inconnu';
+  }
+};
+
+// Calcule l'âge avec typage strict (Date JS ou Timestamp Firebase)
+const calculateAge = (birthDate: Timestamp | Date | undefined): number => {
+  if (!birthDate) return 0;
+
+  // Type assertion sécurisée : on vérifie si la méthode toDate existe (propre à Firebase Timestamp)
+  const birth = (birthDate as Timestamp).toDate 
+    ? (birthDate as Timestamp).toDate() 
+    : (birthDate as Date);
+
   const today = new Date();
-  const birth = new Date(birthDate);
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
-  
+
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
     age--;
   }
-  
+
   return age;
 };
+
+// ---------------------------------------------------------
+// Styles
+// ---------------------------------------------------------
 
 const styles = StyleSheet.create({
   container: {
@@ -247,10 +359,12 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 14,
     color: '#374151',
+    fontWeight: '500',
   },
   memberRole: {
     fontSize: 12,
     color: '#6b7280',
+    marginTop: 2,
   },
   childItem: {
     flexDirection: 'row',
