@@ -28,11 +28,9 @@ export default function Profil() {
   }
 
   return (
-    // 🔹 Wrapper racine avec le background
     <View style={styles.root}>
       <BackgroundShapes style={styles.background} />
 
-      {/* 🔹 Ton contenu inchangé */}
       <View style={styles.container}>
         <Text style={styles.title}>Mes informations</Text>
         <ROInput label="Prénom" value={firstName} />
@@ -47,12 +45,10 @@ export default function Profil() {
 }
 
 const styles = StyleSheet.create({
-  // 🔹 Nouveau : wrapper pour pouvoir mettre le background
   root: {
     flex: 1,
   },
 
-  // 🔹 Nouveau : le background prend tout l’écran
   background: {
     ...StyleSheet.absoluteFillObject,
   },
