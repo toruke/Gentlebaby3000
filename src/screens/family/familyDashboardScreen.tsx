@@ -1,10 +1,11 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../../../config/firebaseConfig';
 import { WelcomeHeader } from '../../components/family/welcomeHeader';
+
 
 // ---------------------------------------------------------
 // 🛠️ DÉFINITION DES TYPES (À déplacer idéalement dans models/family.ts)
@@ -39,6 +40,8 @@ interface DashboardData {
 // ---------------------------------------------------------
 
 export default function FamilyDashboardScreen() {
+  const router = useRouter();
+
   const { id: familyId } = useLocalSearchParams();
 
   // États typés correctement
@@ -129,6 +132,7 @@ export default function FamilyDashboardScreen() {
     );
   }
 
+
   // 4. Fusion des données
   const familyData: DashboardData = {
     members: membersList,
@@ -214,10 +218,17 @@ export default function FamilyDashboardScreen() {
 
 
             ))}
-            <TouchableOpacity style={styles.addChildBtn} onPress={() => { }}>
-              <Text style={styles.addChildText}>+ Créer un enfant</Text>
-            </TouchableOpacity>
+
+
+
+
           </View>
+          <TouchableOpacity
+            style={styles.addChildBtn}
+            onPress={() => router.push(`/child/createChild?id=${familyData.id}`)}
+          >
+            <Text style={styles.addChildText}>+ Ajouter un enfant</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>

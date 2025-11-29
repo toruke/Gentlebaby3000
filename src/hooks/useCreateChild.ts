@@ -1,15 +1,16 @@
+import { useLocalSearchParams, useRouter } from 'expo-router'; // 🔹 Pour récupérer l'ID famille
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router'; // 🔹 Pour récupérer l'ID famille
-import { useChild } from './useChild';
 import { CreateChildRequest } from '../models/child';
 import { isChildAgeValid, validateName } from '../utils/validators';
+import { useChild } from './useChild';
 
 export const useCreateChildForm = () => {
   // Récupération de l'ID de la famille depuis l'URL (ex: /family/123/add-child)
-  const { id: familyId } = useLocalSearchParams(); 
+  const { id: familyId } = useLocalSearchParams();
+
   const router = useRouter();
-  
+
   const { createChild, loading } = useChild();
 
   // --- États du formulaire (identique à avant) ---
@@ -41,7 +42,7 @@ export const useCreateChildForm = () => {
     setTouched({ firstName: true, lastName: true, birthDate: true, gender: true });
 
     if (!isFormValid) return;
-    
+
     // Vérification de sécurité
     if (!familyId || typeof familyId !== 'string') {
       Alert.alert('Erreur', 'Impossible de retrouver la famille associée.');
@@ -58,15 +59,15 @@ export const useCreateChildForm = () => {
 
       // 🔹 Appel du hook qui appelle le service avec familyId
       await createChild(familyId, childData);
-      
+
       Alert.alert(
-        'Félicitations ! 👶', 
+        'Félicitations ! 👶',
         'Le profil a été créé avec succès.',
         [
           { text: 'OK', onPress: () => router.back() }, // Retour au dashboard
         ],
       );
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue.';
       Alert.alert('Erreur', errorMessage);
