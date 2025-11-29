@@ -1,8 +1,8 @@
 import { useLocalSearchParams } from 'expo-router';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore'; 
+import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../../../config/firebaseConfig';
 import { WelcomeHeader } from '../../components/family/welcomeHeader';
 
@@ -23,7 +23,7 @@ export interface Child {
   id: string;
   firstName: string;
   lastName: string;
-  birthDate: Timestamp | Date; 
+  birthDate: Timestamp | Date;
 }
 
 // On définit le type complet attendu par le Dashboard
@@ -40,13 +40,13 @@ interface DashboardData {
 
 export default function FamilyDashboardScreen() {
   const { id: familyId } = useLocalSearchParams();
-  
+
   // États typés correctement
   const [familyInfo, setFamilyInfo] = useState<Partial<DashboardData> | null>(null);
   const [membersList, setMembersList] = useState<FamilyMember[]>([]);
   // Si tu gères les enfants séparément plus tard, garde ce state, sinon il vient de familyInfo
   // const [childrenList, setChildrenList] = useState<Child[]>([]); 
-  
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,7 +71,7 @@ export default function FamilyDashboardScreen() {
           familyName: data.name,
           createdBy: data.createdBy,
           // On force le typage ici car Firestore ne renvoie pas des types stricts
-          children: (data.children || []) as Child[], 
+          children: (data.children || []) as Child[],
           settings: data.settings || {},
         });
       }
@@ -84,16 +84,16 @@ export default function FamilyDashboardScreen() {
       const members: FamilyMember[] = querySnapshot.docs.map(doc => {
         const data = doc.data();
         const names = (data.displayName || 'Utilisateur Inconnu').split(' ');
-        
+
         return {
           id: doc.id,
-          firstName: data.firstName || names[0], 
+          firstName: data.firstName || names[0],
           lastName: data.lastName || (names.length > 1 ? names.slice(1).join(' ') : ''),
           role: data.role || 'unknown',
           displayName: data.displayName,
         };
       });
-      
+
       setMembersList(members);
       setMembersLoaded(true);
     });
@@ -170,7 +170,7 @@ export default function FamilyDashboardScreen() {
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-                {familyData.members.filter((m) => 
+                {familyData.members.filter((m) =>
                   ['TUTOR', 'tuteur', 'Tuteur principal'].includes(m.role),
                 ).length}
               </Text>
@@ -181,7 +181,7 @@ export default function FamilyDashboardScreen() {
 
         {/* SECTIONS LISTES */}
         <View style={styles.sections}>
-          
+
           {/* Section Membres */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>👥 Membres de la famille</Text>
@@ -211,7 +211,12 @@ export default function FamilyDashboardScreen() {
                   {calculateAge(child.birthDate)} ans
                 </Text>
               </View>
+
+
             ))}
+            <TouchableOpacity style={styles.addChildBtn} onPress={() => { }}>
+              <Text style={styles.addChildText}>+ Créer un enfant</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -246,8 +251,8 @@ const calculateAge = (birthDate: Timestamp | Date | undefined): number => {
   if (!birthDate) return 0;
 
   // Type assertion sécurisée : on vérifie si la méthode toDate existe (propre à Firebase Timestamp)
-  const birth = (birthDate as Timestamp).toDate 
-    ? (birthDate as Timestamp).toDate() 
+  const birth = (birthDate as Timestamp).toDate
+    ? (birthDate as Timestamp).toDate()
     : (birthDate as Date);
 
   const today = new Date();
@@ -382,4 +387,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
   },
+  addChildBtn: {
+    marginTop: 12,
+    backgroundColor: '#8E59FF',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  addChildText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+
 });
