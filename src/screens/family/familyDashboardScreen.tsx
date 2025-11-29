@@ -6,18 +6,13 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import { auth, db } from '../../../config/firebaseConfig';
 import { WelcomeHeader } from '../../components/family/welcomeHeader';
 
-
-// ---------------------------------------------------------
-// 🛠️ DÉFINITION DES TYPES (À déplacer idéalement dans models/family.ts)
-// ---------------------------------------------------------
-
+// ... (Les interfaces restent inchangées) ...
 export interface FamilyMember {
   id: string;
   firstName: string;
   lastName: string;
   role: string;
   displayName?: string;
-  // Ajoute d'autres champs si nécessaire (ex: email, avatarUrl)
 }
 
 export interface Child {
@@ -27,32 +22,23 @@ export interface Child {
   birthDate: Timestamp | Date;
 }
 
-// On définit le type complet attendu par le Dashboard
 interface DashboardData {
   id?: string;
   familyName?: string;
   createdBy?: string;
-  settings?: Record<string, unknown>; // Mieux que 'any'
+  settings?: Record<string, unknown>;
   members: FamilyMember[];
   children: Child[];
 }
 
-// ---------------------------------------------------------
-
 export default function FamilyDashboardScreen() {
   const router = useRouter();
-
   const { id: familyId } = useLocalSearchParams();
 
-  // États typés correctement
   const [familyInfo, setFamilyInfo] = useState<Partial<DashboardData> | null>(null);
   const [membersList, setMembersList] = useState<FamilyMember[]>([]);
-  // Si tu gères les enfants séparément plus tard, garde ce state, sinon il vient de familyInfo
-  // const [childrenList, setChildrenList] = useState<Child[]>([]); 
-
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [familyLoaded, setFamilyLoaded] = useState(false);
   const [membersLoaded, setMembersLoaded] = useState(false);
 
@@ -73,8 +59,8 @@ export default function FamilyDashboardScreen() {
           id: docSnap.id,
           familyName: data.name,
           createdBy: data.createdBy,
-          // On force le typage ici car Firestore ne renvoie pas des types stricts
-          children: (data.children || []) as Child[],
+          // 🔹 CORRECTION ICI : On lit 'babies' (le champ DB) mais on le stocke dans 'children' (ton state)
+          children: (data.babies || []) as Child[], 
           settings: data.settings || {},
         });
       }
@@ -114,7 +100,6 @@ export default function FamilyDashboardScreen() {
     }
   }, [familyLoaded, membersLoaded]);
 
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -132,11 +117,10 @@ export default function FamilyDashboardScreen() {
     );
   }
 
-
   // 4. Fusion des données
   const familyData: DashboardData = {
     members: membersList,
-    children: familyInfo.children || [],
+    children: familyInfo.children || [], // Ici, familyInfo.children contient maintenant les données de 'babies'
     familyName: familyInfo.familyName,
     id: familyInfo.id,
     createdBy: familyInfo.createdBy,
@@ -206,40 +190,36 @@ export default function FamilyDashboardScreen() {
           {/* Section Enfants */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>👶 Enfants</Text>
-            {familyData.children.map((child) => (
-              <View key={child.id} style={styles.childItem}>
-                <Text style={styles.childName}>
-                  {child.firstName} {child.lastName}
-                </Text>
-                <Text style={styles.childAge}>
-                  {calculateAge(child.birthDate)} ans
-                </Text>
-              </View>
-
-
-            ))}
-
-
-
-
+            {familyData.children.length === 0 ? (
+              <Text style={styles.emptyText}>Aucun enfant ajouté.</Text>
+            ) : (
+              familyData.children.map((child) => (
+                <View key={child.id} style={styles.childItem}>
+                  <Text style={styles.childName}>
+                    {child.firstName} {child.lastName}
+                  </Text>
+                  <Text style={styles.childAge}>
+                    {calculateAge(child.birthDate)} ans
+                  </Text>
+                </View>
+              ))
+            )}
+            
+            <TouchableOpacity
+              style={styles.addChildBtn}
+              // Assure-toi que la route correspond bien à ton architecture de fichiers
+              onPress={() => router.push(`/child/createChild?id=${familyId}`)}
+            >
+              <Text style={styles.addChildText}>+ Ajouter un enfant</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.addChildBtn}
-            onPress={() => router.push(`/child/createChild?id=${familyData.id}`)}
-          >
-            <Text style={styles.addChildText}>+ Ajouter un enfant</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
   );
 }
 
-// ---------------------------------------------------------
-// 🧹 Helpers extraits pour plus de propreté
-// ---------------------------------------------------------
-
-// Convertit les rôles techniques en libellés lisibles
+// Helpers restent inchangés
 const getRoleLabel = (role: string): string => {
   switch (role) {
   case 'tuteur':
@@ -257,11 +237,8 @@ const getRoleLabel = (role: string): string => {
   }
 };
 
-// Calcule l'âge avec typage strict (Date JS ou Timestamp Firebase)
 const calculateAge = (birthDate: Timestamp | Date | undefined): number => {
   if (!birthDate) return 0;
-
-  // Type assertion sécurisée : on vérifie si la méthode toDate existe (propre à Firebase Timestamp)
   const birth = (birthDate as Timestamp).toDate
     ? (birthDate as Timestamp).toDate()
     : (birthDate as Date);
@@ -273,142 +250,32 @@ const calculateAge = (birthDate: Timestamp | Date | undefined): number => {
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
     age--;
   }
-
   return age;
 };
 
-// ---------------------------------------------------------
-// Styles
-// ---------------------------------------------------------
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  content: {
-    padding: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#64748b',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#ef4444',
-    marginBottom: 20,
-  },
-  stats: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  statsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2d3748',
-    marginBottom: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#6b46c1',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#718096',
-    marginTop: 4,
-  },
-  sections: {
-    gap: 16,
-  },
-  section: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2d3748',
-    marginBottom: 12,
-  },
-  memberItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  memberName: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  memberRole: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  childItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  childName: {
-    fontSize: 14,
-    color: '#374151',
-  },
-  childAge: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  addChildBtn: {
-    marginTop: 12,
-    backgroundColor: '#8E59FF',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  addChildText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  content: { padding: 20 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fa' },
+  loadingText: { marginTop: 12, color: '#64748b' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fa', padding: 20 },
+  errorText: { fontSize: 18, color: '#ef4444', marginBottom: 20 },
+  stats: { backgroundColor: '#ffffff', borderRadius: 12, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  statsTitle: { fontSize: 16, fontWeight: '600', color: '#2d3748', marginBottom: 16 },
+  statsGrid: { flexDirection: 'row', justifyContent: 'space-around' },
+  statItem: { alignItems: 'center' },
+  statNumber: { fontSize: 24, fontWeight: 'bold', color: '#6b46c1' },
+  statLabel: { fontSize: 12, color: '#718096', marginTop: 4 },
+  sections: { gap: 16 },
+  section: { backgroundColor: '#ffffff', borderRadius: 12, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#2d3748', marginBottom: 12 },
+  memberItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  memberName: { fontSize: 14, color: '#374151', fontWeight: '500' },
+  memberRole: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  childItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  childName: { fontSize: 14, color: '#374151' },
+  childAge: { fontSize: 12, color: '#6b7280' },
+  addChildBtn: { marginTop: 12, backgroundColor: '#8E59FF', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  addChildText: { color: 'white', fontWeight: '600', fontSize: 15 },
+  emptyText: { color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', marginVertical: 10 },
 });
