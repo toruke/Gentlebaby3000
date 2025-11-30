@@ -60,7 +60,7 @@ export default function FamilyDashboardScreen() {
           familyName: data.name,
           createdBy: data.createdBy,
           // 🔹 CORRECTION ICI : On lit 'babies' (le champ DB) mais on le stocke dans 'children' (ton state)
-          children: (data.babies || []) as Child[], 
+          children: (data.babies || []) as Child[],
           settings: data.settings || {},
         });
       }
@@ -194,17 +194,23 @@ export default function FamilyDashboardScreen() {
               <Text style={styles.emptyText}>Aucun enfant ajouté.</Text>
             ) : (
               familyData.children.map((child) => (
-                <View key={child.id} style={styles.childItem}>
+                <TouchableOpacity
+                  key={child.id}
+                  style={styles.childItem}
+                  onPress={() => router.push(`/family/${familyId}/child/${child.id}`)}
+                >
                   <Text style={styles.childName}>
                     {child.firstName} {child.lastName}
                   </Text>
                   <Text style={styles.childAge}>
                     {calculateAge(child.birthDate)} ans
                   </Text>
-                </View>
+                </TouchableOpacity>
               ))
+
+
             )}
-            
+
             <TouchableOpacity
               style={styles.addChildBtn}
               // Assure-toi que la route correspond bien à ton architecture de fichiers
