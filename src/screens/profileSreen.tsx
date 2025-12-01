@@ -3,12 +3,10 @@ import ROInput from '../../src/components/ROInput';
 import { useCurrentUserProfile } from '../../src/hooks/useCurrentUserProfile';
 import { router } from 'expo-router';
 import Button from '@/src/components/Button';
-import { useEditProfile } from '@/src/hooks/useEditProfile';
 import React from 'react';
 
 export default function Profil() {
-  const { firstName, lastName, email, loading} = useCurrentUserProfile();
-  const {syncMail} = useEditProfile(()=>{});
+  const { firstName, lastName, email, loading, needsEmailSync, isSyncing, syncEmail} = useCurrentUserProfile();
   
   if (loading) {
     return <View style={styles.center}><Text>Chargement…</Text></View>;
@@ -26,8 +24,18 @@ export default function Profil() {
       >
   Modifier profil
       </Text>
-      
-      <Button title="J'ai confirmé mon email" onPress={syncMail}></Button>
+      {needsEmailSync && (
+        <View >
+          <Text>
+            Votre nouvelle adresse e-mail a été vérifiée. Veuillez la synchroniser.
+          </Text>
+          <Button 
+            title={isSyncing ? 'Synchronisation...' : 'Synchroniser l\'e-mail'}
+            onPress={syncEmail}
+            disabled={isSyncing}
+          />
+        </View>
+      )}
     </View>
   );
 }

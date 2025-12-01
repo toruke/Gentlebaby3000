@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isValidEmail, verificationPassword } from '../utils/validation';
 import { User } from '../components/EditProfileForm';
-import { getProfileUser, getVerificationPassword, updateProfileUser, updateTheEmail } from '../services/EditProfileService';
+import { getProfileUser, getVerificationPassword, updateProfileUser } from '../services/EditProfileService';
 import { auth } from '@/config/firebaseConfig';
-import { Alert } from 'react-native';
 
 
 export const useEditProfile =  (onClose: () => void) => {
@@ -47,37 +46,11 @@ export const useEditProfile =  (onClose: () => void) => {
       setError('Erreur lors de la récupération des données utilisateurs');
     }
   },[setError, setEditFirstname, setEditLastname, setEditMailAddress, setUser]);
-  
-  const syncMail = useCallback(async () => {
-    console.log('syncMail déclenché');
-    const userNew = auth.currentUser;
-    if (!userNew) throw new Error('Utilisateur non connecté');
-
-    await userNew.reload();
-    const refreshedEmail = userNew.email;
-
-    const snap = await getProfileUser();
-    if (snap.empty) return;
-
-    const userDoc = snap.docs[0];
-    const firestoreEmail = userDoc.data().email;
-
-    if (refreshedEmail && refreshedEmail !== firestoreEmail){
-      const resultMail = await updateTheEmail(userDoc.id, refreshedEmail);
-      setEditMailAddress(refreshedEmail);
-      setUser((prev) => prev ? { ...prev, email: refreshedEmail } : undefined);
-      if (resultMail.includes('réussie')){
-        Alert.alert('Succès', 'L\'email a bien été vérifiée et mis à jour');
-        await fetchUser();
-      }
-    }
-  }, [setEditMailAddress, setUser, fetchUser]);
 
   
   useEffect(() => {
     fetchUser();
-    syncMail();
-  },[syncMail, fetchUser]);
+  },[fetchUser]);
 
 
   const onSubmit = async () => {
@@ -126,7 +99,13 @@ export const useEditProfile =  (onClose: () => void) => {
     }
     else if (result.includes('email de vérification')) {
       setError('');
-      alert(result); 
+      alert(result);
+      try {
+        await auth.signOut(); 
+        // L'écouteur onAuthStateChanged dans useCurrentUserProfile va rediriger vers l'écran de connexion
+      } catch (e) {
+        console.error('Erreur lors de la déconnexion après changement d\'email:', e);
+      } 
       onClose();
     }
     else {
@@ -147,5 +126,5 @@ export const useEditProfile =  (onClose: () => void) => {
     }
   };
 
-  return { user, onSubmit, onSubmitPassword, syncMail, fetchUser, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setStep, setCurrentPassword, setNewPassword, setConfirmPassword, error, setError };
+  return { user, onSubmit, onSubmitPassword, fetchUser, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setStep, setCurrentPassword, setNewPassword, setConfirmPassword, error, setError};
 };
