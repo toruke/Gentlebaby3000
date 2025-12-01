@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { collection, where, getDocs, doc, query, updateDoc, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { db, auth } from '@/config/firebaseConfig';
 //import { db } from '@/config/firebaseConfig';
@@ -113,6 +112,7 @@ export async function updateProfileUser(firstname: string, lastname: string, ema
     const data = userDoc.data();
   
     const update : UserUpdate = {};
+    let emailUpdatePending = false;
 
     if (data.firstName !== firstname){
       update.firstName = firstname;
@@ -133,7 +133,8 @@ export async function updateProfileUser(firstname: string, lastname: string, ema
         }
 
         await verifyBeforeUpdateEmail(user, email);
-        return 'Un email de vérification a été envoyé à votre nouvelle adresse. Veuillez la confirmer pour finaliser le changement.';
+        emailUpdatePending = true;
+        //return 'Un email de vérification a été envoyé à votre nouvelle adresse. Veuillez la confirmer pour finaliser le changement.';
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error('Erreur complète:', JSON.stringify(error, null, 2));
@@ -154,7 +155,9 @@ export async function updateProfileUser(firstname: string, lastname: string, ema
       await updateDoc(doc(db, USERS_COLLECTION, userDoc.id), update);
       console.log('La modification est réussie');
     }
-    
+    if (emailUpdatePending) {
+      return 'Un email de vérification a été envoyé à votre nouvelle adresse. Veuillez la confirmer pour finaliser le changement.';
+    }
     
     return 'La modification est réussie';
   }

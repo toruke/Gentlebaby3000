@@ -79,7 +79,7 @@ const EditProfileForm: React.FC<EditProfilFormProps> = ( {onClose} ) => {
       {error.length > 0 &&
         (<Text style={styles.text}>{error}</Text>)
       }
-      {step === 'ready' &&
+      {(step === 'ready' || step === 'change') &&
         (<>
           <View style={{ marginVertical: 10 }}>
             <Button title="Submit" onPress={onSubmit} />

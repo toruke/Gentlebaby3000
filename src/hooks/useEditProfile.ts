@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { isValidEmail, verificationPassword } from '../utils/validation';
 import { User } from '../components/EditProfileForm';
 import { getProfileUser, getVerificationPassword, updateProfileUser, updateTheEmail } from '../services/EditProfileService';
@@ -19,32 +19,7 @@ export const useEditProfile =  (onClose: () => void) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   
-  const syncMail = async () => {
-    console.log('syncMail déclenché');
-    const userNew = auth.currentUser;
-    if (!userNew) throw new Error('Utilisateur non connecté');
-
-    await userNew.reload();
-    const refreshedEmail = userNew.email;
-
-    const snap = await getProfileUser();
-    if (snap.empty) return;
-
-    const userDoc = snap.docs[0];
-    const firestoreEmail = userDoc.data().email;
-
-    if (refreshedEmail && refreshedEmail !== firestoreEmail){
-      const resultMail = await updateTheEmail(userDoc.id, refreshedEmail);
-      setEditMailAddress(refreshedEmail);
-      setUser((prev) => prev ? { ...prev, email: refreshedEmail } : undefined);
-      if (resultMail.includes('réussie')){
-        Alert.alert('Succès', 'L\'email a bien été vérifiée et mis à jour');
-        await fetchUser();
-      }
-    }
-  };
-
-  const fetchUser = async() => {
+  const fetchUser = useCallback(async() => {
     try {
       const snapUser = await getProfileUser();
       if (snapUser.empty) {
@@ -71,10 +46,38 @@ export const useEditProfile =  (onClose: () => void) => {
       console.error('Erreur Firebase: ' , error);
       setError('Erreur lors de la récupération des données utilisateurs');
     }
-  };
+  },[setError, setEditFirstname, setEditLastname, setEditMailAddress, setUser]);
+  
+  const syncMail = useCallback(async () => {
+    console.log('syncMail déclenché');
+    const userNew = auth.currentUser;
+    if (!userNew) throw new Error('Utilisateur non connecté');
+
+    await userNew.reload();
+    const refreshedEmail = userNew.email;
+
+    const snap = await getProfileUser();
+    if (snap.empty) return;
+
+    const userDoc = snap.docs[0];
+    const firestoreEmail = userDoc.data().email;
+
+    if (refreshedEmail && refreshedEmail !== firestoreEmail){
+      const resultMail = await updateTheEmail(userDoc.id, refreshedEmail);
+      setEditMailAddress(refreshedEmail);
+      setUser((prev) => prev ? { ...prev, email: refreshedEmail } : undefined);
+      if (resultMail.includes('réussie')){
+        Alert.alert('Succès', 'L\'email a bien été vérifiée et mis à jour');
+        await fetchUser();
+      }
+    }
+  }, [setEditMailAddress, setUser, fetchUser]);
+
+  
   useEffect(() => {
     fetchUser();
-  },[]);
+    syncMail();
+  },[syncMail, fetchUser]);
 
 
   const onSubmit = async () => {

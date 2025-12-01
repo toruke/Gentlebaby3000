@@ -9,7 +9,15 @@ export type User = {
 
 export type Membership = {
     userId: string;
+    familyId: string;  
     role: string;
     status: string;
     createdAt: Date;
 };
+
+export type UserFamily = {
+    userId: string;
+    familyId: string;  
+    role: string;
+    createdAt: Date;
+}

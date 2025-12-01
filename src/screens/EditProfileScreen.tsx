@@ -5,7 +5,7 @@ import EditProfileForm from '../components/EditProfileForm';
 export const EditProfileScreen = () => {
 
   const handleClose = async () => {
-    router.push({ pathname: '/(screens)/profils', params: { refresh: Date.now() } });
+    router.push({ pathname: '/(tabs)/profile', params: { refresh: Date.now() } });
   };
 
 
