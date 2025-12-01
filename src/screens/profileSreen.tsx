@@ -1,35 +1,48 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import ROInput from '../../src/components/ROInput';
 import { useCurrentUserProfile } from '../../src/hooks/useCurrentUserProfile';
 import { router } from 'expo-router';
 import Button from '@/src/components/Button';
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 
 export default function Profil() {
-  const { firstName, lastName, email, loading, needsEmailSync, isSyncing, syncEmail} = useCurrentUserProfile();
-  
+  const { firstName, lastName, email, loading, needsEmailSync, isSyncing, syncEmail } =
+    useCurrentUserProfile();
+
   if (loading) {
-    return <View style={styles.center}><Text>Chargement…</Text></View>;
+    return (
+      <View style={styles.center}>
+        <Text>Chargement…</Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mes informations</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Mes informations</Text>
+
+        {/* --- Bouton rond avec icône edit --- */}
+        <TouchableOpacity
+          onPress={() => router.push('/user/EditingProfileUser')}
+          style={styles.editBtn}
+        >
+          <Feather name="edit" size={20} color="#007AFF" />
+        </TouchableOpacity>
+      </View>
+
       <ROInput label="Prénom" value={firstName} />
       <ROInput label="Nom" value={lastName} />
       <ROInput label="Email" value={email} keyboardType="email-address" />
-      <Text
-        style={{ color: 'blue', marginTop: 20, fontSize:18 }}
-        onPress={() => {router.push('../../user/EditingProfileUser'); } }
-      >
-  Modifier profil
-      </Text>
+
       {needsEmailSync && (
-        <View >
-          <Text>
-            Votre nouvelle adresse e-mail a été vérifiée. Veuillez la synchroniser.
+        <View style={{ marginTop: 20 }}>
+          <Text style={styles.syncWarning}>
+            Veuillez synchroniser votre Mail.
           </Text>
-          <Button 
+
+          <Button
             title={isSyncing ? 'Synchronisation...' : 'Synchroniser l\'e-mail'}
             onPress={syncEmail}
             disabled={isSyncing}
@@ -42,12 +55,40 @@ export default function Profil() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
+
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 16, textTransform: 'capitalize' },
-  label: { marginBottom: 6, color: '#444' },
-  input: {
-    borderWidth: 1, borderColor: '#ccc', backgroundColor: '#fff',
-    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, color: '#111',
+
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  inputMuted: { backgroundColor: '#f0f0f0', color: '#777' },
+
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 16,
+    textTransform: 'capitalize',
+  },
+
+  editBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  syncWarning: {
+    color: 'red',
+    marginBottom: 10,
+    fontSize: 16,
+  },
 });
