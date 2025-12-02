@@ -89,7 +89,7 @@ module.exports = defineConfig([
     files: ['**/*.{js,jsx,ts,tsx}'],
     rules: {
       // Bonnes pratiques générales
-      'no-console': 'warn',
+      // 'no-console': 'warn',
       'no-unused-vars': 'warn',
       'prefer-const': 'error',
       'no-var': 'error',

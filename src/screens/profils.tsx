@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import ROInput from '../../src/components/ROInput';
-import { useCurrentUserProfile } from '../../src/hooks/useCurrentUserProfile';
+import ROInput from '../components/ROInput';
+import { useCurrentUserProfile } from '../hooks/useCurrentUserProfile';
 
 export default function Profil() {
   const { firstName, lastName, email, loading } = useCurrentUserProfile();
