@@ -51,6 +51,15 @@ export default function RootLayout() {
               headerTintColor: '#1e293b',
             }} 
           />
+          <Stack.Screen 
+            name="user/EditingProfileUser" 
+            options={{ 
+              title: 'Modification de mon profil utilisateur',
+              headerBackTitle: 'Retour',
+              headerTransparent: true,
+              headerTintColor: '#1e293b',
+            }} 
+          />
           
           <Stack.Screen 
             name="(tabs)" 
