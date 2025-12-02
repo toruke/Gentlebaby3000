@@ -14,10 +14,8 @@ export const EditProfileScreen = () => {
 
   return (
     <View style={styles.fullScreenContainer}>
-      {/* Le fond s'étend sur tout l'écran, zIndex: -1 est dans BackgroundShapes */}
       <BackgroundShapes style={StyleSheet.absoluteFillObject} />
             
-      {/* 2. Appliquer les insets comme padding au conteneur du formulaire */}
       <View style={{ 
         flex: 1,
         paddingTop: insets.top + 56,

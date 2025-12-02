@@ -23,7 +23,6 @@ export default function Profil() {
       <View style={styles.headerRow}>
         <Text style={styles.title}>Mes informations</Text>
 
-        {/* --- Bouton rond avec icône edit --- */}
         <TouchableOpacity
           onPress={() => router.push('/user/EditingProfileUser')}
           style={styles.editBtn}
@@ -37,8 +36,8 @@ export default function Profil() {
       <ROInput label="Email" value={email} keyboardType="email-address" />
 
       {needsEmailSync && (
-        <View style={{ marginTop: 20 }}>
-          <Text style={styles.syncWarning}>
+        <View style={styles.syncContainer}>
+          <Text style={styles.syncText}>
             Veuillez synchroniser votre Mail.
           </Text>
 
@@ -86,9 +85,20 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  syncWarning: {
-    color: 'red',
+  syncContainer: {
+    backgroundColor: '#fff8e1',        
+    borderLeftColor: '#f9a825',       
+    borderLeftWidth: 4,
+    padding: 20,
+    marginHorizontal: 10,
+    marginTop: 20,
+    borderRadius: 6,
+  },
+
+  syncText: {
+    color: '#e65100',                 
+    fontSize: 18,
+    fontWeight: '500',
     marginBottom: 10,
-    fontSize: 16,
   },
 });

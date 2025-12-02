@@ -49,6 +49,11 @@ const EditProfileForm: React.FC<EditProfilFormProps> = ( {onClose} ) => {
           <Button title="Vérifier mot de passe" onPress={onSubmitPassword} />
         </>)
       }
+      {error.length > 0 && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
       {step === 'ready' &&
         (<>
           <View style={{ marginVertical: 10 }}>
@@ -76,9 +81,7 @@ const EditProfileForm: React.FC<EditProfilFormProps> = ( {onClose} ) => {
             value={confirmPassword} />
         </>)
       }
-      {error.length > 0 &&
-        (<Text style={styles.text}>{error}</Text>)
-      }
+      
       {(step === 'ready' || step === 'change') &&
         (<>
           <View style={{ marginVertical: 10 }}>
@@ -95,11 +98,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     margin: 10,
   },
-  text: {
+  errorContainer: {
+    backgroundColor: '#ffebee',
+    borderLeftColor: '#d32f2f',
+    borderLeftWidth: 4,
+    padding: 20,
+    marginHorizontal: 10,
+    marginTop: 5,
+    borderRadius: 6,
+  },
+  errorText: {
+    color: '#b71c1c',
     fontSize: 18,
-    color: 'red',
-    margin: 10,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
 });
 
