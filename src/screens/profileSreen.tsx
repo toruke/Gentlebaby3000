@@ -1,14 +1,26 @@
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import ROInput from '../../src/components/ROInput';
-import { useCurrentUserProfile } from '../../src/hooks/useCurrentUserProfile';
-import { router } from 'expo-router';
 import Button from '@/src/components/Button';
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React from 'react';
+import BackgroundShapes from '../../src/components/backgroundShapes';
+
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ROInput from '../../src/components/ROInput';
+import { useCurrentUserProfile } from '../../src/hooks/useCurrentUserProfile';
+import { logout } from '../services/auth';
 
 export default function Profil() {
   const { firstName, lastName, email, loading, needsEmailSync, isSyncing, syncEmail } =
     useCurrentUserProfile();
+
+  async function handleLogout() {
+    try {
+      await logout();
+      router.replace('/auth/login');
+    } catch (e) {
+      console.log('Erreur logout:', e);
+    }
+  }
 
   if (loading) {
     return (
@@ -19,56 +31,57 @@ export default function Profil() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Mes informations</Text>
+    <View style={styles.root}>
+      <BackgroundShapes style={styles.background} />
 
-        <TouchableOpacity
-          onPress={() => router.push('/user/EditingProfileUser')}
-          style={styles.editBtn}
-        >
-          <Feather name="edit" size={20} color="#007AFF" />
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>Mes informations</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/user/EditingProfileUser')}
+            style={styles.editBtn}
+          >
+            <Feather name="edit" size={20} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
+
+        <ROInput label="Prénom" value={firstName} />
+        <ROInput label="Nom" value={lastName} />
+        <ROInput label="Email" value={email} keyboardType="email-address" />
+        {needsEmailSync && (
+          <View style={styles.syncContainer}>
+            <Text style={styles.syncText}>
+              Veuillez synchroniser votre Mail.
+            </Text>
+
+            <Button
+              title={isSyncing ? 'Synchronisation...' : 'Synchroniser l\'e-mail'}
+              onPress={syncEmail}
+              disabled={isSyncing}
+            />
+          </View>
+        )}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Déconnexion</Text>
         </TouchableOpacity>
       </View>
-
-      <ROInput label="Prénom" value={firstName} />
-      <ROInput label="Nom" value={lastName} />
-      <ROInput label="Email" value={email} keyboardType="email-address" />
-
-      {needsEmailSync && (
-        <View style={styles.syncContainer}>
-          <Text style={styles.syncText}>
-            Veuillez synchroniser votre Mail.
-          </Text>
-
-          <Button
-            title={isSyncing ? 'Synchronisation...' : 'Synchroniser l\'e-mail'}
-            onPress={syncEmail}
-            disabled={isSyncing}
-          />
-        </View>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
   container: { flex: 1, padding: 20 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 16,
-    textTransform: 'capitalize',
-  },
 
   editBtn: {
     width: 44,
@@ -100,5 +113,36 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     marginBottom: 10,
+  },
+  headerContainer: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 16, 
+  },
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 16, textTransform: 'capitalize' },
+  label: { marginBottom: 6, color: '#444' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    color: '#111',
+  },
+  inputMuted: { backgroundColor: '#f0f0f0', color: '#777' },
+
+  logoutBtn: {
+    backgroundColor: '#b055afff',
+    paddingVertical: 12,
+    marginTop: 40,
+    borderRadius: 10,
+  },
+  logoutText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
