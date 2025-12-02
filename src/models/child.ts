@@ -7,6 +7,7 @@ export type Child = {
     profilePicture?: string;
     createdAt?: Date;
     updatedAt?: Date;
+
 };
 
 // Type pour la création (sans les champs générés automatiquement)
