@@ -68,7 +68,7 @@ Join our community of developers creating universal apps.
 
 - `/users/{userId}`
   - Contient les profils utilisateurs
-- `/families/{familyId}`
+- `/family/{familyId}`
   - Infos sur une famille
   - `/members/{userId}` → membres de la famille
   - `/children/{childId}` → enfants

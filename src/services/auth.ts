@@ -1,7 +1,7 @@
 
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../config/firebaseConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from '../../config/firebaseConfig';
 
 export async function signUp(email: string, password: string) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -27,3 +27,13 @@ export function getCurrentAuthUser() {
 }
 
 
+export async function logout() {
+  try {
+    await signOut(auth);
+    await AsyncStorage.removeItem('token');
+    return true;
+  } catch (error) {
+    console.error('Erreur logout:', error);
+    throw error;
+  }
+}
