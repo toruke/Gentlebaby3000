@@ -10,7 +10,7 @@ export default function FamilyDetailLayout() {
       <Stack.Screen 
         name="settings" 
         options={{ 
-          headerShown: true,
+          headerShown: false,
           title: 'Paramètres famille',
           headerBackTitle: 'Retour',
         }} 

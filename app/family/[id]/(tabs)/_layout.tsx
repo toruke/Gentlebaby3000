@@ -14,7 +14,6 @@ export default function FamilyTabLayout() {
           borderTopColor: '#e2e8f0',
         },
         // PERSONNALISER LE HEADER
-        headerTitle: 'Ma Famille', // ← Titre fixe
         headerTitleAlign: 'center',
         headerStyle: {
           backgroundColor: '#6b46c1',
