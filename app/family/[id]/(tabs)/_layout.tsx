@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 
-export default function FamilyTabLayout() {
+export default function FamilyTabsLayout() {
+  const params = useLocalSearchParams();
+  const familyId = params.familyId || params.id;
   
   return (
     <Tabs
@@ -32,6 +35,7 @@ export default function FamilyTabLayout() {
             <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
+        initialParams={{ familyId }} // Passez l'ID ici aussi
       />
       <Tabs.Screen
         name="activity/index"
@@ -41,6 +45,7 @@ export default function FamilyTabLayout() {
             <Ionicons name="medkit-outline" size={size} color={color} />
           ),
         }}
+        initialParams={{ familyId }} // Passez l'ID ici aussi
       />
       <Tabs.Screen
         name="shifts/index"
@@ -50,6 +55,7 @@ export default function FamilyTabLayout() {
             <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
+        initialParams={{ familyId }} // Passez l'ID ici aussi
       />
       <Tabs.Screen
         name="planning/index"
@@ -59,6 +65,7 @@ export default function FamilyTabLayout() {
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
+        initialParams={{ familyId }} // Passez l'ID ici aussi
       />
       <Tabs.Screen
         name="management/index"
@@ -68,6 +75,7 @@ export default function FamilyTabLayout() {
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
         }}
+        initialParams={{ familyId }} // Passez l'ID ici aussi
       />
     </Tabs>
   );
