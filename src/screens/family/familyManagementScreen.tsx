@@ -1,23 +1,9 @@
-import { router } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { logout } from '../../services/auth';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function ManagementScreen() {
 
-  async function handleLogout() {
-    try {
-      await logout();
-      router.replace('/auth/login');
-    } catch (e) {
-      console.log('Erreur Logout :', e);
-    }
-  }
-
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Déconnexion</Text>
-      </TouchableOpacity>
       <Text style={styles.title}>Appareils et Utilisateurs</Text>
       <Text style={styles.message}>Bientôt disponible</Text>
 

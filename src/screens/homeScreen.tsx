@@ -79,7 +79,7 @@ export default function HomeScreen() {
               style={styles.logoutButton}
               onPress={handleLogout}
             >
-              <Text style={styles.logoutButtonText}>🚪</Text>
+              <Text style={styles.logoutButtonText}>Déconnexion</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
