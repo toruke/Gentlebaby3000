@@ -1,11 +1,11 @@
-import { 
-  collection, 
-  doc, 
-  serverTimestamp, 
-  writeBatch, 
+import {
   arrayUnion,
+  collection,
+  doc,
+  serverTimestamp,
+  writeBatch,
 } from 'firebase/firestore';
-import { db, auth } from '../../config/firebaseConfig';
+import { auth, db } from '../../config/firebaseConfig';
 import { CreateChildRequest } from '../models/child';
 
 /**
@@ -46,7 +46,7 @@ export async function addChildToFamily(familyId: string, childData: CreateChildR
   };
 
   // 🚀 Ajout des opérations au batch
-  
+
   // A. Création du document complet dans la sous-collection
   batch.set(childRef, newChild);
 

@@ -52,9 +52,9 @@ export default function RootLayout() {
             }} 
           />
           <Stack.Screen 
-            name="family/FamilyManagement" 
+            name="user/EditingProfileUser" 
             options={{ 
-              title: 'Gestion famille',
+              title: 'Modification de mon profil utilisateur',
               headerBackTitle: 'Retour',
               headerTransparent: true,
               headerTintColor: '#1e293b',
