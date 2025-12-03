@@ -214,7 +214,7 @@ export default function FamilyDashboardScreen() {
             <TouchableOpacity
               style={styles.addChildBtn}
               // Assure-toi que la route correspond bien à ton architecture de fichiers
-              onPress={() => router.push(`/child/createChild?id=${familyId}`)}
+              onPress={() => router.push(`/family/${familyId}/child`)}
             >
               <Text style={styles.addChildText}>+ Ajouter un enfant</Text>
             </TouchableOpacity>

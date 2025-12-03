@@ -1,2 +1,2 @@
-import ProfileScreen from '../../../src/screens/profils';
+import ProfileScreen from '../../../src/screens/profileSreen';
 export default ProfileScreen;
