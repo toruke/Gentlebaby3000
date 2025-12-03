@@ -1,7 +1,8 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function FamilyTabLayout() {
+  const { id } = useLocalSearchParams();
   
   return (
     <Tabs
@@ -69,6 +70,8 @@ export default function FamilyTabLayout() {
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
         }}
+        initialParams={{ familyId: id }}
+
       />
     </Tabs>
   );

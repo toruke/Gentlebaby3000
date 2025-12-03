@@ -13,13 +13,11 @@ export const getCurrentUser = async () => {
   return token ? { token } : null;
 };
 
-// !!!!!! A SUPPRIMER
-const currentUser = { uid: 'JL0YZyEU8BgqwSH7t6a9kqjnCnE2', email: 'm.remy@gmail.com'};
+
 
 export function getCurrentAuthUser() {
   //connected user verification 
-  //const user = auth.currentUser;
-  const user = currentUser;
+  const user = auth.currentUser;
   
   if (!user) throw new Error('Utilisateur non connecté');
 

@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
@@ -94,7 +94,6 @@ export default function HomeScreen() {
 
       {/* Liste des familles */}
       <View style={styles.familiesContainer}>
-        <Link href="/family/FamilyManagement">Gestion des rôles et des appareils</Link>
 
         {loading ? (
           // 🔹 Indicateur de chargement
