@@ -30,7 +30,7 @@ export const useModifyRole = () =>{
         Alert.alert('Erreur', 'Problème de connexion ou erreur lié à la base de donnée');
 
       }
-      router.push({ pathname: '/family/FamilyManagement', params: {refresh :Date.now(), familyId}});
+      router.push({ pathname: '/family/[id]/(tabs)/management', params: {refresh :Date.now(), id: familyId}});
     }
     catch (error){
       console.log(error);

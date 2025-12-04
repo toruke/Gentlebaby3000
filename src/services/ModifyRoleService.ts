@@ -2,18 +2,17 @@ import { db } from '@/config/firebaseConfig';
 import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { getCurrentAuthUser } from './auth';
 
-const MEMBERBERSHIP_COLLECTION = 'userFamily';
+const FAMILY_COLLECTION = 'family';
 
 
 export async function verificationTutor(familyId: string) {
   try {
 
     const user = getCurrentAuthUser();
-
+   
     const tutorQuery = query(
-      collection(db, MEMBERBERSHIP_COLLECTION),
+      collection(db, FAMILY_COLLECTION, familyId, 'members'),
       where('userId', '==', user.uid),
-      where('familyId', '==', familyId),
     );
     const snapTutor = await getDocs(tutorQuery);
     
@@ -23,12 +22,8 @@ export async function verificationTutor(familyId: string) {
 
     const memberDoc = snapTutor.docs[0];
     const data = memberDoc.data();
-    if (data.role === 'tuteur'){
-      return true;
-    }
-    else{
-      return false;
-    }
+    return data.role === 'tuteur';
+
   }
   catch (error){
     console.log(error);
@@ -51,9 +46,8 @@ export async function updateRoleUser (userId: string, familyId: string, role: st
     }
 
     const memberQuery = query(
-      collection(db, MEMBERBERSHIP_COLLECTION),
+      collection(db, FAMILY_COLLECTION, familyId, 'members'),
       where('userId', '==', userId),
-      where('familyId', '==', familyId),
     );
     const snapMember = await getDocs(memberQuery);
       
@@ -72,7 +66,7 @@ export async function updateRoleUser (userId: string, familyId: string, role: st
       return 'Le rôle est déjà celui sélectionné';
 
     }
-    await updateDoc(doc(db, MEMBERBERSHIP_COLLECTION, memberDoc.id), {role});
+    await updateDoc(doc(db, FAMILY_COLLECTION, familyId, 'members', memberDoc.id), {role});
 
     return 'Rôle mis à jour avec succès';
   
