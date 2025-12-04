@@ -1,9 +1,9 @@
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useFamilyManagement } from '../hooks/useFamilyManagement';
 //import { styles } from '../styles/FamilyManagementStyle';
 import { styles } from '../styles/globalStyles';
+import { getRoleColor, getStatusColor, getStatusText, getUpperName } from '../utils/familyUtils';
 
 export type Device = {
   id: string;
@@ -27,7 +27,6 @@ type PropsFamilyMembers = {
 };
 
 export const FamilyMembers: React.FC<PropsFamilyMembers> = ({ familyMembers }) => {
-  const { getStatusColor, getStatusText, getRoleColor, getUpperName } = useFamilyManagement();
   const router = useRouter();
 
   return (

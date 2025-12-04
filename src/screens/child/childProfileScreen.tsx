@@ -104,7 +104,7 @@ export default function ChildProfileScreen() {
       const snap = await getDoc(familyRef);
       const data = snap.data();
 
-      const updatedBabies = data.babies.map((b: Child) =>
+      const updatedBabies = data?.babies.map((b: Child) =>
         b.id === child.id ? { ...b, photoUrl: downloadURL } : b,
       );
 

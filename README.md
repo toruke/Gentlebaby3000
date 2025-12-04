@@ -1,4 +1,4 @@
-# Babyphone connecté
+# GentleBaby3000
 projet d'integration
 # Welcome to your Expo app 👋
 

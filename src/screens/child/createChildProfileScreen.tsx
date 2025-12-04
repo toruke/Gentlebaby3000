@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { DateSelector, GenderSelector, ValidatedInput } from '../../components/child/childForm';
 import { useCreateChildForm } from '../../hooks/useCreateChild';
 
-export default function ChildProfileScreen() {
+export default function CreateChildProfileScreen() {
   // On récupère tout depuis notre hook personnalisé
   const {
     formValues,

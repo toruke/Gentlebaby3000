@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { Ionicons} from '@expo/vector-icons';
 import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -144,6 +145,16 @@ export default function FamilyDashboardScreen() {
           familyName={familyData.familyName || 'Ma Famille'}
         />
 
+        <View>
+          <TouchableOpacity
+            style={styles.settingBtn}
+            onPress={() => router.push('./')}
+          >
+            <Text style={styles.setting}><Ionicons name="settings" size={30} color="gray" aria-label='paramètres'/></Text>
+          </TouchableOpacity>
+
+        </View>
+
         {/* STATS */}
         <View style={styles.stats}>
           <Text style={styles.statsTitle}>Aperçu de la famille</Text>
@@ -173,6 +184,12 @@ export default function FamilyDashboardScreen() {
           {/* Section Membres */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>👥 Membres de la famille</Text>
+            <TouchableOpacity
+              style={styles.addUserBtn}
+              onPress={() => router.push('./')}
+            >
+              <Text style={styles.addUser}>+ inviter</Text>
+            </TouchableOpacity>
             {familyData.members.map((member) => (
               <View key={member.id} style={styles.memberItem}>
                 <View>
@@ -213,8 +230,7 @@ export default function FamilyDashboardScreen() {
 
             <TouchableOpacity
               style={styles.addChildBtn}
-              // Assure-toi que la route correspond bien à ton architecture de fichiers
-              onPress={() => router.push(`/child/createChild?id=${familyId}`)}
+              onPress={() => router.push(`/family/${familyId}/child`)}
             >
               <Text style={styles.addChildText}>+ Ajouter un enfant</Text>
             </TouchableOpacity>
@@ -282,6 +298,10 @@ const styles = StyleSheet.create({
   childName: { fontSize: 14, color: '#374151' },
   childAge: { fontSize: 12, color: '#6b7280' },
   addChildBtn: { marginTop: 12, backgroundColor: '#8E59FF', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  addUserBtn: { marginBottom: 12, backgroundColor: '#8E59FF', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, alignItems: 'center', alignSelf: 'flex-start' },
+  addUser: { color: 'white', fontWeight: '600', fontSize: 15, textAlign: 'center' },
   addChildText: { color: 'white', fontWeight: '600', fontSize: 15 },
   emptyText: { color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', marginVertical: 10 },
+  settingBtn: { position: 'absolute', top: -63, right: 5},
+  setting: { },
 });

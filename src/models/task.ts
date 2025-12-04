@@ -1,13 +1,19 @@
-export type Task = {
-    taskId: string;
-    name: string;
-    icon: string;
-    type: 'Event' | 'Ponctual' | 'Recurrent';
-    active: boolean;
-    status: string;
-    tolerance: number;
-    validation: boolean;
-};
+import { Timestamp } from 'firebase/firestore';
+
+export interface Task {
+  id: string;
+  Name: string;
+  Icon: string;
+  Type: 'recurring' | 'temporal' | 'event';
+  Active: boolean;
+  Status: 'completed' | 'pending' | 'overdue';
+  Tolerance: number;
+  assignedMembers: string[];
+  createdAt: Timestamp;
+  nextOccurrence?: Date;
+  fixedTimes?: string[];
+  startDateTime?: Timestamp;
+}
 
 export type RecurrentTask = {
     taskId: string;

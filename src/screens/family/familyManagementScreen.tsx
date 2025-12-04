@@ -1,7 +1,7 @@
 
 
 import {  Text, View } from 'react-native';
-import { FamilyMembers } from '../../components/FamilyMember2';
+import { FamilyMembers } from '../../components/FamilyMember';
 import { useFamilyManagement } from '../../hooks/useFamilyManagement';
 import {stylesFamily} from '../../styles/FamilyManagementStyle';
 interface FamilyManagementProps {
