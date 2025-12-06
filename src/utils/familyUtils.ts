@@ -24,5 +24,7 @@ export const getRoleColor = (role: string) => {
 };
 
 export const getUpperName = (str: string) => {
+  if (str.length === 0) return '';
+  if (/[0-9]/.test(str.charAt(0))) return str;
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
