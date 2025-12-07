@@ -1,7 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams } from 'expo-router';
-import { doc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,22 +13,21 @@ import {
   View,
 } from 'react-native';
 
-import { db, storage } from '../../../config/firebaseConfig';
+import { db } from '../../../config/firebaseConfig';
 import BackgroundShapes from '../../../src/components/backgroundShapes';
 
-// 🔥 Import images au lieu de require()
 import defaultAvatarGirl from '../../../assets/images/default-avatar-girl.png';
 import defaultAvatar from '../../../assets/images/default-avatar.png';
 
-// Typage propre pour ESLint
+// Typage
 interface Child {
-    id: string;
-    firstName: string;
-    lastName: string;
-    birthDate?: Timestamp;
-    gender?: 'male' | 'female';
-    photoUrl?: string;
-    deviceId?: string;
+  id: string;
+  firstName: string;
+  lastName: string;
+  birthDate?: Timestamp;
+  gender?: 'male' | 'female';
+  photoUrl?: string;
+  deviceId?: string;
 }
 
 export default function ChildProfileScreen() {
@@ -39,27 +37,33 @@ export default function ChildProfileScreen() {
   const [familyName, setFamilyName] = useState('');
   const [tutorName, setTutorName] = useState('');
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
 
+  // Photo locale (non sauvegardée)
+  const [localPhoto, setLocalPhoto] = useState<string | null>(null);
+
+  // Charger enfant
   useEffect(() => {
     if (!familyId || !childId) return;
 
     const loadChild = async () => {
       try {
         const familyRef = doc(db, 'family', familyId as string);
-        const familySnap = await getDoc(familyRef);
+        const snap = await getDoc(familyRef);
 
-        if (!familySnap.exists()) {
+        if (!snap.exists()) {
           Alert.alert('Erreur', 'Famille introuvable.');
           return;
         }
 
-        const data = familySnap.data();
-        setFamilyName(data.name || '');
-        setTutorName(data.createdByName || '—');
+        const data = snap.data();
+        setFamilyName(data?.name || '');
+        setTutorName(data?.createdByName || '—');
 
-        const babies = data.babies || [];
-        const found = babies.find((b: Child) => b.id === childId);
+        const babiesArray = Array.isArray(data?.babies)
+          ? data.babies
+          : Object.values(data?.babies || {});
+
+        const found = babiesArray.find((b: Child) => b.id === childId);
 
         if (!found) {
           Alert.alert('Erreur', 'Enfant introuvable.');
@@ -74,49 +78,22 @@ export default function ChildProfileScreen() {
     };
 
     loadChild();
-  }, [childId, familyId]);
+  }, []);
 
-  const changePhoto = async () => {
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        return Alert.alert('Permission refusée', 'Autorisez l’accès à la galerie.');
-      }
+  // Choisir une photo locale
+  const pickLocalPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      return Alert.alert('Autorisation refusée', 'Veuillez autoriser l’accès aux photos.');
+    }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.8,
-      });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
 
-      if (result.canceled || !child) return;
-
-      setUploading(true);
-
-      const response = await fetch(result.assets[0].uri);
-      const blob = await response.blob();
-
-      const storageRef = ref(storage, `childPhotos/${child.id}.jpg`);
-      await uploadBytes(storageRef, blob);
-
-      const downloadURL = await getDownloadURL(storageRef);
-
-      const familyRef = doc(db, 'family', familyId as string);
-      const snap = await getDoc(familyRef);
-      const data = snap.data();
-
-      const updatedBabies = data?.babies.map((b: Child) =>
-        b.id === child.id ? { ...b, photoUrl: downloadURL } : b,
-      );
-
-      await updateDoc(familyRef, { babies: updatedBabies });
-
-      setChild({ ...child, photoUrl: downloadURL });
-
-      Alert.alert('Succès', 'Photo mise à jour !');
-    } catch {
-      Alert.alert('Erreur', 'Impossible de mettre à jour la photo.');
-    } finally {
-      setUploading(false);
+    if (!result.canceled) {
+      setLocalPhoto(result.assets[0].uri);
     }
   };
 
@@ -128,6 +105,12 @@ export default function ChildProfileScreen() {
     );
   }
 
+  const avatarSource = localPhoto
+    ? { uri: localPhoto }
+    : child.gender === 'female'
+      ? defaultAvatarGirl
+      : defaultAvatar;
+
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.bgWrapper}>
@@ -136,42 +119,31 @@ export default function ChildProfileScreen() {
 
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 150 }}>
         <View style={styles.card}>
+          {/* Image */}
+          <Image source={avatarSource} style={styles.photo} />
 
-          <Image
-            source={
-              child.photoUrl
-                ? { uri: child.photoUrl }
-                : child.gender === 'female'
-                  ? defaultAvatarGirl
-                  : defaultAvatar
-            }
-            style={styles.photo}
-          />
-
-          <TouchableOpacity
-            style={styles.changePhotoBtn}
-            onPress={changePhoto}
-            disabled={uploading}
-          >
-            <Text style={styles.changePhotoText}>
-              {uploading ? 'Téléchargement...' : 'Changer la photo'}
-            </Text>
+          {/* Bouton changer photo */}
+          <TouchableOpacity style={styles.changePhotoBtn} onPress={pickLocalPhoto}>
+            <Text style={styles.changePhotoText}>Changer la photo</Text>
           </TouchableOpacity>
 
           <Text style={styles.name}>
             {child.firstName} {child.lastName}
           </Text>
 
+          {/* Nom de famille */}
           <View style={styles.row}>
             <Text style={styles.label}>Nom de famille</Text>
             <Text style={styles.value}>{familyName}</Text>
           </View>
 
+          {/* Tuteur principal */}
           <View style={styles.row}>
             <Text style={styles.label}>Tuteur principal</Text>
             <Text style={styles.value}>{tutorName}</Text>
           </View>
 
+          {/* Date de naissance */}
           <View style={styles.row}>
             <Text style={styles.label}>Date de naissance</Text>
             <Text style={styles.value}>
@@ -179,28 +151,36 @@ export default function ChildProfileScreen() {
             </Text>
           </View>
 
-          <View style={styles.row}>
+          {/* Babyphone (aligné) */}
+          <View style={styles.rowBabyphone}>
             <Text style={styles.label}>Babyphone</Text>
 
-            {child.deviceId ? (
-              <Text style={[styles.value, { color: '#4A7FFF', fontWeight: '700' }]}>
-                                Babyphone #{child.deviceId}
+            <View style={styles.babyphoneRight}>
+              <Text
+                style={
+                  child.deviceId
+                    ? styles.babyphoneTextActive
+                    : styles.babyphoneTextInactive
+                }
+              >
+                {child.deviceId
+                  ? `Babyphone #${child.deviceId}`
+                  : 'Aucun babyphone associé'}
               </Text>
-            ) : (
+
               <TouchableOpacity
-                style={styles.addDeviceButton}
+                style={styles.addDeviceBtn}
                 onPress={() =>
                   Alert.alert(
-                    'Bientôt disponible 💜',
+                    'Bientôt disponible ',
                     'Vous pourrez associer un babyphone dans une prochaine version.',
                   )
                 }
               >
                 <Text style={styles.addDeviceText}>+ Ajouter</Text>
               </TouchableOpacity>
-            )}
+            </View>
           </View>
-
         </View>
       </ScrollView>
     </View>
@@ -266,6 +246,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#333',
   },
+
+  /* ROW CLASSIQUE */
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -273,17 +255,56 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  label: { color: '#666', fontSize: 14 },
-  value: { fontWeight: '600', maxWidth: 190, textAlign: 'right', fontSize: 14 },
-  addDeviceButton: {
+
+  /* ROW BABYPHONE (alignée) */
+  rowBabyphone: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+
+  babyphoneRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  babyphoneTextInactive: {
+    color: '#999',
+    marginRight: 10,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  babyphoneTextActive: {
+    color: '#4A7FFF',
+    marginRight: 10,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  addDeviceBtn: {
     backgroundColor: '#F2E9FF',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
   },
   addDeviceText: {
     color: '#8E59FF',
     fontWeight: '600',
     fontSize: 13,
+  },
+
+  label: {
+    color: '#666',
+    fontSize: 14,
+  },
+  value: {
+    fontWeight: '600',
+    maxWidth: 190,
+    textAlign: 'right',
+    fontSize: 14,
   },
 });
