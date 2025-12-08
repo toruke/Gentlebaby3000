@@ -10,7 +10,4 @@ export type PlanningSlot = {
   endTime: Date;           
 };
 
-/* 
-device associé au membre
-baby 
-*/
+
