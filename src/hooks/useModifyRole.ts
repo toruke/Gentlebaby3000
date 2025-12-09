@@ -46,7 +46,7 @@ export const useModifyRole = () =>{
         text: 'Annuler',
         onPress: () => console.log('Cancel Pressed'),
       },
-      {text: 'Confimer', onPress: () => {
+      {text: 'Confirmer', onPress: () => {
         confirmRoleChange(roleSelected);
         console.log('OK Pressed');}},
     ]);
