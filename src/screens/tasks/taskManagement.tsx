@@ -10,8 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import useTaskDelete from '../hooks/useTaskDelete';
-import TaskService from '../services/taskService';
+import useTaskDelete from '../../hooks/useTaskDelete';
+import TaskService from '../../services/taskService';
 
 interface Task {
   id: string;
