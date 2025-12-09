@@ -94,6 +94,7 @@ export default function HomeScreen() {
 
       {/* Liste des familles */}
       <View style={styles.familiesContainer}>
+
         {loading ? (
           // 🔹 Indicateur de chargement
           <View style={styles.loadingState}>
