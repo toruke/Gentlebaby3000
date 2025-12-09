@@ -4,10 +4,10 @@ appId: com.anonymous.GentleBaby3000  # Remplacer par IP de expo go
 - tapOn: "Connexion"
 - tapOn: "votre@email.com"
 - inputText: "remy"
-- inputText: "maggie5@"
+- inputText: "maggie@"
 - inputText: "gmail.com"
 - tapOn: "Votre mot de passe"
-- inputText: "Remy_55?"
+- inputText: ""
 - hideKeyboard
 - tapOn: "Se connecter"
 - tapOn: "^RemySansFamille"
