@@ -2,12 +2,12 @@ import Button from '@/src/components/Button';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
-import BackgroundShapes from '../../src/components/backgroundShapes';
+import BackgroundShapes from '../../components/backgroundShapes';
 
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import ROInput from '../../src/components/ROInput';
-import { useCurrentUserProfile } from '../../src/hooks/useCurrentUserProfile';
-import { logout } from '../services/auth';
+import ROInput from '../../components/ROInput';
+import { useCurrentUserProfile } from '../../hooks/useCurrentUserProfile';
+import { logout } from '../../services/auth';
 
 export default function Profil() {
   const { firstName, lastName, email, loading, needsEmailSync, isSyncing, syncEmail } =
@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
   },
 
   syncContainer: {
-    backgroundColor: '#fff8e1',        
-    borderLeftColor: '#f9a825',       
+    backgroundColor: '#fff8e1',
+    borderLeftColor: '#f9a825',
     borderLeftWidth: 4,
     padding: 20,
     marginHorizontal: 10,
@@ -109,16 +109,16 @@ const styles = StyleSheet.create({
   },
 
   syncText: {
-    color: '#e65100',                 
+    color: '#e65100',
     fontSize: 18,
     fontWeight: '500',
     marginBottom: 10,
   },
   headerContainer: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 16, 
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   title: { fontSize: 22, fontWeight: '700', marginBottom: 16, textTransform: 'capitalize' },
   label: { marginBottom: 6, color: '#444' },

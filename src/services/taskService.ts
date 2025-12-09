@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import { Task } from '../models/task';
 
@@ -25,6 +25,15 @@ export const taskService = {
       },
       errorCallback,
     );
+  },
+  // Créer une nouvelle tâche
+  createTask: async (familyId: string, taskData: Omit<Task, 'id' | 'createdAt'>): Promise<string> => {
+    const tasksRef = collection(db, 'family', familyId, 'tasks');
+    const docRef = await addDoc(tasksRef, {
+      ...taskData,
+      createdAt: Timestamp.now(), // Utilise le timestamp du serveur
+    });
+    return docRef.id;
   },
 
   // Supprimer une tâche

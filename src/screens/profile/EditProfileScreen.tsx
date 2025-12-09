@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
-import EditProfileForm from '../components/EditProfileForm';
+import EditProfileForm from '../../components/EditProfileForm';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import BackgroundShapes from '../components/backgroundShapes';
+import BackgroundShapes from '@/src/components/backgroundShapes';
 
 
 export const EditProfileScreen = () => {

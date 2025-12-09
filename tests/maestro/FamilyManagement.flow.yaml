@@ -1,0 +1,28 @@
+appId: com.anonymous.GentleBaby3000  # Remplacer par IP de expo go
+---
+
+- tapOn: "Connexion"
+- tapOn: "votre@email.com"
+- inputText: "remy"
+- inputText: "maggie@"
+- inputText: "gmail.com"
+- tapOn: "Votre mot de passe"
+- inputText: ""
+- hideKeyboard
+- tapOn: "Se connecter"
+- tapOn: "^RemySansFamille"
+- tapOn: "Gestion"
+- tapOn:
+    text: "Modifier Rôle"
+    index: 1
+- tapOn: "Tuteur secondaire"
+- tapOn: "Confirmer"
+- tapOn: "OK"
+
+
+
+
+
+
+
+

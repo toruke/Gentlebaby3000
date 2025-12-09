@@ -13,6 +13,18 @@ export const getCurrentUser = async () => {
   return token ? { token } : null;
 };
 
+
+
+export function getCurrentAuthUser() {
+  //connected user verification 
+  const user = auth.currentUser;
+  
+  if (!user) throw new Error('Utilisateur non connecté');
+
+  return user;
+}
+
+
 export async function logout() {
   try {
     await signOut(auth);
