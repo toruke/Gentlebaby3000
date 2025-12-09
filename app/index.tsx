@@ -1,1 +1,2 @@
-export { default } from './createTaskScreen';
+import WelcomeScreen from '../src/screens/welcomeScreen';
+export default WelcomeScreen;
