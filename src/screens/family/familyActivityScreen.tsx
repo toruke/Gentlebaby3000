@@ -171,7 +171,7 @@ export default function FamilyActivityScreen({
   };
 
   const handleCreateTask = () => {
-    router.push(`/(tabs)/family/${effectiveFamilyId}/task/create`);
+    router.push(`/family/${effectiveFamilyId}/task`);
   };
 
   return (
