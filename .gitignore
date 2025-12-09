@@ -48,3 +48,6 @@ app-example
 test.tsx
 
 coverage/
+node_modules/
+.expo/types/
+.idea/
