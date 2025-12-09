@@ -12,11 +12,7 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
 }) => (
   <View style={styles.container}>
     <Text style={styles.greeting}>
-      Bonjour {userName} dans la famille {familyName}
-    </Text>
-    <Text style={styles.description}>
-      Cette interface centrale vous permet de coordonner tous les soins de votre bébé 
-      avec les autres membres de la famille.
+      Bonjour {userName} {familyName}
     </Text>
   </View>
 );

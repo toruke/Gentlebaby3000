@@ -43,6 +43,8 @@ export async function addChildToFamily(familyId: string, childData: CreateChildR
     firstName: childData.firstName,
     lastName: childData.lastName,
     birthDate: childData.birthday, // Important pour le calcul d'âge rapide
+    gender: childData.gender,
+    photoUrl: null,
   };
 
   // 🚀 Ajout des opérations au batch
