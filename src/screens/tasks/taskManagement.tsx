@@ -20,14 +20,14 @@ interface Task {
   Status: 'completed' | 'pending' | 'overdue';
   Tolerance: number;
   assignedMembers: string[];
-  createdAt: any;
+  createdAt: TaskType|undefined;
   nextOccurrence?: Date;
   fixedTimes?: string[];
-  startDateTime?: any;
+  startDateTime?: TaskType|undefined;
 }
 
 interface TaskManagerScreenProps {
-  navigation: any;
+  navigation: TaskType|undefined;
 }
 
 const TaskManagerScreen: React.FC<TaskManagerScreenProps> = ({ navigation }) => {
