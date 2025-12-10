@@ -1,4 +1,4 @@
-# Babyphone connecté
+# GentleBaby3000
 projet d'integration
 # Welcome to your Expo app 👋
 
@@ -68,7 +68,7 @@ Join our community of developers creating universal apps.
 
 - `/users/{userId}`
   - Contient les profils utilisateurs
-- `/families/{familyId}`
+- `/family/{familyId}`
   - Infos sur une famille
   - `/members/{userId}` → membres de la famille
   - `/children/{childId}` → enfants

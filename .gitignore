@@ -47,3 +47,5 @@ app-example
 
 #test
 test.tsx
+
+coverage/

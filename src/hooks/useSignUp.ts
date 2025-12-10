@@ -1,5 +1,6 @@
+ 
 import { router } from 'expo-router';
-import { fetchSignInMethodsForEmail, updateProfile } from 'firebase/auth';
+import { fetchSignInMethodsForEmail, sendEmailVerification, updateProfile } from 'firebase/auth';
 import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
@@ -50,6 +51,13 @@ export function useSignUp() {
 
       const user = await signUp(e, password);
       console.log('[signup] auth ok:', user.uid);
+      
+      try {
+        await sendEmailVerification(user);
+        alert('Un email de vérification a été envoyé à votre adresse.');
+      } catch (verifErr) {
+        console.log('[signup] sendEmailVerification error:', verifErr);
+      }
 
       try {
         await updateProfile(user, { displayName: `${firstName.trim()} ${lastName.trim()}` });
@@ -78,12 +86,12 @@ export function useSignUp() {
 
       if (Platform.OS === 'web') {
         notify('Compte créé avec succès', `Bienvenue, ${fullName} !`);
-        router.replace('./auth/profile/index');
+        router.replace('/(tabs)');
       } else {
         Alert.alert(
           'Succès',
           `Compte créé pour ${user.email ?? e}`,
-          [{ text: 'OK', onPress: () => router.replace('./auth/profile/index') }],
+          [{ text: 'OK', onPress: () => router.replace('/(tabs)') }],
         );
       }
     } catch (err: unknown) {
