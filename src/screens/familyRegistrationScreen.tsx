@@ -1,4 +1,4 @@
-// src/screens/TutorRegistrationScreen.tsx
+// src/screens/FamilyRegistrationScreen.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,7 @@ import gtb4 from '../../assets/images/gtb4.jpg';
 import { auth } from '../../config/firebaseConfig';
 import { createFamily } from '../services/familyService';
 
-export default function TutorRegistrationScreen() {
+export default function FamilyRegistrationScreen() {
   const [familyName, setFamilyName] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<string | undefined>(undefined);
   const [chosenDefault, setChosenDefault] = useState<number>(0);
