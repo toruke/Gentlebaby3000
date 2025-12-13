@@ -1,4 +1,4 @@
-// services/familyService.ts
+
 import { 
   collection, 
   doc, 
@@ -84,9 +84,7 @@ export async function createFamily(familyName: string, imageUri?: string) {
   return familyRef.id;
 }
 
-/**
- * Supprime une photo de famille du Storage Firebase
- */
+
 export async function deleteFamilyPhoto(photoUrl: string) {
   if (!photoUrl) return;
   try {
