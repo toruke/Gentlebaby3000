@@ -6,38 +6,44 @@ import { TimelineItem, TimelineService } from '../../services/timelineService';
 interface TimelineItemCardProps {
   item: TimelineItem;
   onPress: (task: Task) => void;
-  toleranceMinutes?: number;
+  testCurrentTime?: Date; 
 }
 
 export const TimelineItemCard: React.FC<TimelineItemCardProps> = ({
   item,
   onPress,
-  toleranceMinutes = 15,
+  testCurrentTime, // Récupération de la prop
 }) => {
   const { task, status, isNextUpcoming, scheduledTime } = item;
-  const color = TimelineService.getStatusColor(status, isNextUpcoming);
+  
   const timeStr = TimelineService.formatTime(scheduledTime);
+  const color = TimelineService.getStatusColor(status, isNextUpcoming);
 
   const getTimeStatusText = () => {
-    const now = new Date();
+    if (!scheduledTime || isNaN(scheduledTime.getTime())) return 'Date invalide';
+
+    // MODIFICATION ICI : On utilise testCurrentTime s'il existe, sinon new Date()
+    const now = testCurrentTime || new Date(); 
+    
     const diffMinutes = (scheduledTime.getTime() - now.getTime()) / (1000 * 60);
+    
     
     if (status === 'overdue') {
       const overdueMinutes = Math.abs(Math.floor(diffMinutes));
+      if (overdueMinutes > 60) {
+        const hours = Math.floor(overdueMinutes / 60);
+        const mins = overdueMinutes % 60;
+        return `En retard de ${hours}h ${mins}min`;
+      }
       return `En retard de ${overdueMinutes} min`;
     }
     
-    if (status === 'current') {
-      return `Dans ${Math.floor(diffMinutes)} min`;
-    }
+    if (status === 'current') return 'C\'est le moment !';
     
-    if (diffMinutes < 60) {
-      return `Dans ${Math.floor(diffMinutes)} min`;
-    }
+    if (diffMinutes < 60) return `Dans ${Math.floor(diffMinutes)} min`;
+    if (diffMinutes < 120) return `Dans 1h ${Math.floor(diffMinutes % 60)}min`;
     
-    if (diffMinutes < 120) {
-      return 'Dans 1h';
-    }
+    if (scheduledTime.getDate() !== now.getDate()) return `Demain à ${timeStr}`;
     
     return `À ${timeStr}`;
   };
@@ -49,29 +55,24 @@ export const TimelineItemCard: React.FC<TimelineItemCardProps> = ({
       activeOpacity={0.7}
     >
       <View style={styles.timeContainer}>
-        <Text style={[styles.timeText, { color }]}>
-          {timeStr}
-        </Text>
-        <Text style={styles.timeStatus}>
-          {getTimeStatusText()}
-        </Text>
+        <Text style={[styles.timeText, { color }]}>{timeStr}</Text>
+        <Text style={styles.timeStatus}>{getTimeStatusText()}</Text>
       </View>
 
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.icon}>{task.Icon}</Text>
           <View style={styles.titleContainer}>
-            <Text style={styles.name} numberOfLines={1}>
-              {task.Name}
-            </Text>
+            <Text style={styles.name} numberOfLines={1}>{task.Name}</Text>
             <Text style={styles.type}>
               {task.Type === 'recurring' && '🔄 Récurrent'}
-              {task.Type === 'temporal' && '⏰ Temporel'}
+              {task.Type === 'temporal' && '⏰ Heure fixe'}
               {task.Type === 'event' && '📅 Événement'}
             </Text>
           </View>
         </View>
 
+        {/* --- C'EST CE BLOC QUI MANQUAIT --- */}
         <View style={styles.details}>
           {task.assignedMembers && task.assignedMembers.length > 0 && (
             <Text style={styles.detailText}>
@@ -79,21 +80,16 @@ export const TimelineItemCard: React.FC<TimelineItemCardProps> = ({
             </Text>
           )}
           
-          {status === 'current' && toleranceMinutes > 0 && (
-            <Text style={[styles.detailText, { color: '#fd7e14' }]}>
-              ⚠️ Dans sa fenêtre d'exécution
-            </Text>
-          )}
-          
           {status === 'overdue' && (
-            <Text style={[styles.detailText, { color: '#dc3545' }]}>
-              🔴 Action requise
+            <Text style={[styles.detailText, { color: '#dc3545', fontWeight: 'bold' }]}>
+               🔴 Retard important
             </Text>
           )}
         </View>
+        {/* ---------------------------------- */}
       </View>
 
-      {isNextUpcoming && status === 'upcoming' && (
+      {isNextUpcoming && status !== 'overdue' && (
         <View style={styles.nextBadge}>
           <Text style={styles.nextBadgeText}>SUIVANT</Text>
         </View>
@@ -113,59 +109,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderLeftWidth: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 2,
     elevation: 2,
   },
   timeContainer: {
-    width: 70,
+    width: 75,
     alignItems: 'center',
     marginRight: 12,
+    paddingRight: 12,
+    borderRightWidth: 1,
+    borderRightColor: '#f0f0f0',
   },
-  timeText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  timeStatus: {
-    fontSize: 11,
-    color: '#6c757d',
-    textAlign: 'center',
-  },
-  content: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  icon: {
-    fontSize: 28,
-    marginRight: 12,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2d3748',
-    marginBottom: 2,
-  },
-  type: {
-    fontSize: 12,
-    color: '#718096',
-  },
-  details: {
-    marginLeft: 40, // Pour s'aligner sous le nom (icon width + margin)
-  },
-  detailText: {
-    fontSize: 12,
-    color: '#a0aec0',
-    marginBottom: 2,
-  },
+  timeText: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  timeStatus: { fontSize: 10, color: '#718096', textAlign: 'center', fontWeight: '500' },
+  content: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  icon: { fontSize: 24, marginRight: 12 },
+  titleContainer: { flex: 1 },
+  name: { fontSize: 16, fontWeight: '600', color: '#2d3748', marginBottom: 2 },
+  type: { fontSize: 11, color: '#a0aec0' },
+  // Styles ajoutés pour les détails manquants
+  details: { marginLeft: 40, marginTop: 4 },
+  detailText: { fontSize: 12, color: '#a0aec0', marginBottom: 2 },
   nextBadge: {
     position: 'absolute',
     top: -8,
@@ -175,9 +142,5 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 10,
   },
-  nextBadgeText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
+  nextBadgeText: { color: '#ffffff', fontSize: 10, fontWeight: 'bold' },
 });
