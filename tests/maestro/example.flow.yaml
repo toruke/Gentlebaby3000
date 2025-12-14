@@ -1,0 +1,4 @@
+# yaml-language-server: false
+appId: exp://  # Remplacer par IP de expo go
+---
+- tapOn: "Connexion"
