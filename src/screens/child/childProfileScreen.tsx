@@ -100,7 +100,7 @@ export default function ChildProfileScreen() {
   if (loading || !child) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#8E59FF" />
+        <ActivityIndicator testID="loading-spinner" size="large" color="#8E59FF" />
       </View>
     );
   }

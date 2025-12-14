@@ -1,11 +1,11 @@
 
 
-import {  Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { FamilyMembers } from '../../components/FamilyMember';
 import { useFamilyManagement } from '../../hooks/useFamilyManagement';
-import {stylesFamily} from '../../styles/FamilyManagementStyle';
+import { stylesFamily } from '../../styles/FamilyManagementStyle';
 interface FamilyManagementProps {
-    familyId: string | undefined;
+  familyId: string | undefined;
 }
 
 export default function FamilyManagement({ familyId }: FamilyManagementProps) {

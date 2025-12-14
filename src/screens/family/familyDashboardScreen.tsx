@@ -1,6 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { Ionicons} from '@expo/vector-icons';
 import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -150,7 +150,7 @@ export default function FamilyDashboardScreen() {
             style={styles.settingBtn}
             onPress={() => router.push('./')}
           >
-            <Text style={styles.setting}><Ionicons name="settings" size={30} color="gray" aria-label='paramètres'/></Text>
+            <Text style={styles.setting}><Ionicons name="settings" size={30} color="gray" aria-label='paramètres' /></Text>
           </TouchableOpacity>
 
         </View>
@@ -302,6 +302,6 @@ const styles = StyleSheet.create({
   addUser: { color: 'white', fontWeight: '600', fontSize: 15, textAlign: 'center' },
   addChildText: { color: 'white', fontWeight: '600', fontSize: 15 },
   emptyText: { color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', marginVertical: 10 },
-  settingBtn: { position: 'absolute', top: -63, right: 5},
-  setting: { },
+  settingBtn: { position: 'absolute', top: -63, right: 5 },
+  setting: {},
 });
