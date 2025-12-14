@@ -32,7 +32,7 @@ export default function CreateChildProfileScreen() {
 
       {/* FORMULAIRE */}
       <View style={styles.formContainer}>
-        
+
         <ValidatedInput
           label="Prénom *"
           placeholder="Prénom"
@@ -76,7 +76,8 @@ export default function CreateChildProfileScreen() {
         />
 
         {/* BOUTON D'ACTION */}
-        <TouchableOpacity
+        <TouchableOpacity testID="create-child-button"
+
           style={[
             styles.createButton,
             (!isFormValid || loading) && styles.createButtonDisabled,
