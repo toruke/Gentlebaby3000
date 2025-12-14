@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, useGlobalSearchParams } from 'expo-router';
+// CORRECTION 1 : Importer 'Href'
+import { useLocalSearchParams, useRouter, useGlobalSearchParams, Href } from 'expo-router';
 import { useFamilyTasks } from '../../hooks/useFamilyTasks';
 import { TaskFilters } from '../../components/activity/taskFilters';
 import { TaskCard } from '../../components/activity/taskCard';
@@ -18,18 +19,15 @@ interface FamilyActivityScreenProps {
   familyId?: string;
 }
 
-export default function FamilyActivityScreen({ 
-  familyId: propFamilyId, 
+export default function FamilyActivityScreen({
+  familyId: propFamilyId,
 }: FamilyActivityScreenProps = {}) {
   const router = useRouter();
-  
+
   // Récupérez les params de toutes les sources possibles
   const localParams = useLocalSearchParams();
   const globalParams = useGlobalSearchParams();
-  
-  console.log('🔍 Local params:', localParams);
-  console.log('🔍 Global params:', globalParams);
-  console.log('🔍 Prop familyId:', propFamilyId);
+
 
   // Essayez toutes les sources possibles dans l'ordre de priorité
   const familyId = (
@@ -42,9 +40,7 @@ export default function FamilyActivityScreen({
 
   // Convertir en string si c'est un tableau
   const effectiveFamilyId = Array.isArray(familyId) ? familyId[0] : familyId;
-  
-  console.log('✅ Family ID final:', effectiveFamilyId);
-  console.log('✅ Type:', typeof effectiveFamilyId);
+
 
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -63,12 +59,6 @@ export default function FamilyActivityScreen({
 
   // Debug supplémentaire
   useEffect(() => {
-    console.log('📊 État du hook:', {
-      loading,
-      tasksCount: tasks?.length,
-      error,
-      familyId: effectiveFamilyId,
-    });
   }, [loading, tasks, error, effectiveFamilyId]);
 
   // Si pas d'ID, montrez un écran d'erreur clair
@@ -167,11 +157,13 @@ export default function FamilyActivityScreen({
   };
 
   const handleEditTask = (taskId: string) => {
-    router.push(`/(tabs)/family/${effectiveFamilyId}/task/${taskId}/edit`);
+    // CORRECTION 2 : Ajouter 'as Href' à la fin de la chaîne
+    router.push(`/family/${effectiveFamilyId}/task/${taskId}` as Href);
   };
 
   const handleCreateTask = () => {
-    router.push(`/family/${effectiveFamilyId}/task`);
+    // CORRECTION 3 : Ajouter 'as Href' ici aussi
+    router.push(`/family/${effectiveFamilyId}/task` as Href);
   };
 
   return (
@@ -218,8 +210,8 @@ export default function FamilyActivityScreen({
           filteredTasks.length === 0 && styles.emptyListContainer,
         ]}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={refresh}
             colors={['#8E59FF']}
             tintColor="#8E59FF"

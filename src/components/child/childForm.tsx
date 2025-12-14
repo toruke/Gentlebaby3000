@@ -7,7 +7,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 interface ValidatedInputProps {
   label: string;
   value: string;
-  onChangeText: (text: string) => void;
+  onChangeText: (_text: string) => void;
   onBlur: () => void;
   placeholder: string;
   isValid: boolean;
@@ -17,14 +17,14 @@ interface ValidatedInputProps {
 
 interface GenderSelectorProps {
   selectedGender?: 'male' | 'female' | 'other';
-  onSelect: (gender: 'male' | 'female' | 'other') => void;
+  onSelect: (_gender: 'male' | 'female' | 'other') => void;
   isValid: boolean;
   isTouched: boolean;
 }
 
 interface DateSelectorProps {
   date: Date;
-  onDateChange: (date: Date) => void;
+  onDateChange: (_date: Date) => void;
   isValid: boolean;
   isTouched: boolean;
 }
@@ -103,7 +103,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({ date, onDateChange, 
       >
         <Text style={[styles.dateText, styles.dateTextSelected]}>{formatDate(date)}</Text>
       </TouchableOpacity>
-      
+
       {showPicker && (
         <DateTimePicker
           value={date}
@@ -113,7 +113,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({ date, onDateChange, 
           maximumDate={new Date()}
         />
       )}
-      
+
       {isTouched && !isValid && <Text style={styles.errorText}>L'enfant doit avoir entre 0 et 18 ans.</Text>}
     </View>
   );

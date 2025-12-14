@@ -1,34 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Task } from '../models/task';
 import { taskService } from '../services/taskService';
 
-export const useFamilyTasks = (familyId: string) => {
+export const useFamilyTasks = (familyId: string | string[]) => { // J'ai adapté le type car vous vérifiez isArray
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 1. On normalise l'ID dès le début pour l'utiliser partout
+  const normalizedId = useMemo(() => {
+    if (Array.isArray(familyId)) return familyId[0];
+    if (typeof familyId === 'number') return String(familyId);
+    return familyId;
+  }, [familyId]);
+
   useEffect(() => {
-    console.log('🎯 useFamilyTasks - Nouvel appel avec:', {
-      familyId,
-      type: typeof familyId,
-      isArray: Array.isArray(familyId),
-    });
 
-    // Normaliser l'ID
-    let normalizedId: string | null = null;
-    
-    if (Array.isArray(familyId)) {
-      normalizedId = familyId[0]; // Prendre le premier élément
-    } else if (typeof familyId === 'string') {
-      normalizedId = familyId;
-    } else if (typeof familyId === 'number') {
-      normalizedId = String(familyId);
-    }
-    
-    console.log('🎯 useFamilyTasks - ID normalisé:', normalizedId);
 
-    // Vérifications
+    // Vérifications de sécurité
     if (!normalizedId || normalizedId === 'undefined' || normalizedId === 'null') {
       console.warn('⚠️ useFamilyTasks - ID invalide, arrêt du chargement');
       setLoading(false);
@@ -36,67 +26,63 @@ export const useFamilyTasks = (familyId: string) => {
       return;
     }
 
-    if (normalizedId.length < 3) { // Les IDs Firestore font généralement 20+ caractères
+    if (normalizedId.length < 3) {
       console.warn('⚠️ useFamilyTasks - ID semble trop court:', normalizedId);
     }
 
-    console.log(`🔄 Début du chargement pour famille: ${normalizedId}`);
     setLoading(true);
     setError(null);
 
+    // CORRECTION 2 : La souscription est bien À L'INTÉRIEUR du useEffect
     const unsubscribe = taskService.subscribeToFamilyTasks(
       normalizedId,
       (tasksList) => {
-        console.log(`✅ ${tasksList.length} tâche(s) chargée(s)`);
         setTasks(tasksList);
         setLoading(false);
         setRefreshing(false);
       },
-      (error) => {
-        console.error('❌ Erreur useFamilyTasks:', error);
-        setError(error.message);
+      (err) => { // Renommé 'error' en 'err' pour éviter conflit avec le state 'error'
+        console.error('❌ Erreur useFamilyTasks:', err);
+        setError(err.message);
         setLoading(false);
         setRefreshing(false);
       },
     );
 
+    // CORRECTION 3 : Le nettoyage est bien retourné par le useEffect
     return () => {
-      console.log('🧹 Nettoyage useFamilyTasks');
       unsubscribe();
     };
-  }, [familyId]); // Dépendance sur familyId
+  }, [normalizedId]); // On dépend de l'ID normalisé
+
   const refresh = () => {
-    console.log('🔄 Manuel refresh déclenché');
     setRefreshing(true);
-    // Le useEffect se déclenchera à nouveau car refreshing change
+    // Comme c'est un listener temps réel, on a juste besoin de resetter l'état visuel
+    // ou de re-vérifier la connexion, mais ici on simule juste un petit délai
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
   // Méthodes pour manipuler les tâches
   const deleteTask = async (taskId: string): Promise<boolean> => {
-    if (!familyId) return false;
-    
-    const id = Array.isArray(familyId) ? familyId[0] : familyId;
+    if (!normalizedId) return false;
+
     try {
-      await taskService.deleteTask(id, taskId);
+      await taskService.deleteTask(normalizedId, taskId);
       return true;
-    } catch (error) {
-      console.error('❌ Erreur suppression:', error);
-      throw error;
+    } catch (err) {
+      console.error('❌ Erreur suppression:', err);
+      throw err;
     }
   };
 
   const toggleActive = async (taskId: string, currentActive: boolean): Promise<void> => {
-    if (!familyId) return;
-    
-    const id = Array.isArray(familyId) ? familyId[0] : familyId;
-    await taskService.toggleTaskActive(id, taskId, currentActive);
+    if (!normalizedId) return;
+    await taskService.toggleTaskActive(normalizedId, taskId, currentActive);
   };
 
   const markComplete = async (taskId: string): Promise<void> => {
-    if (!familyId) return;
-    
-    const id = Array.isArray(familyId) ? familyId[0] : familyId;
-    await taskService.updateTaskStatus(id, taskId, 'completed');
+    if (!normalizedId) return;
+    await taskService.updateTaskStatus(normalizedId, taskId, 'completed');
   };
 
   return {

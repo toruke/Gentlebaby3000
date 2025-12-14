@@ -46,7 +46,7 @@ export const useCreateTask = (familyId: string | undefined) => {
   const [fixedTimes, setFixedTimes] = useState<string>('13:00, 19:00');
   const [comments, setComments] = useState<string>('');
   const [evaluation, setEvaluation] = useState<number>(0);
-  
+
   // États UI
   const [errors, setErrors] = useState<FormErrors>({});
   const [availableTutors, setAvailableTutors] = useState<Tutor[]>([]);
@@ -61,12 +61,10 @@ export const useCreateTask = (familyId: string | undefined) => {
 
       try {
         setLoading(true);
-        console.log(`🔍 Recherche des membres pour la famille : ${familyId}`);
 
         let querySnapshot = await getDocs(collection(db, 'family', familyId, 'members'));
-        
+
         if (querySnapshot.empty) {
-          console.log('⚠️ Pas de membres, fallback sur users global...');
           querySnapshot = await getDocs(collection(db, 'users'));
         }
 
@@ -133,24 +131,24 @@ export const useCreateTask = (familyId: string | undefined) => {
 
   const calculateNextOccurrence = (): Date => {
     const now = new Date();
-    
+
     if (taskType === 'recurring') {
       const intervalNum = parseInt(interval, 10);
       const nextDate = new Date(startDateTime);
-      
+
       while (nextDate <= now) {
         nextDate.setHours(nextDate.getHours() + intervalNum);
       }
       return nextDate;
     }
-    
+
     if (taskType === 'temporal') {
       const times = fixedTimes.split(',').map(t => t.trim()).filter(t => t);
       const today = new Date();
       const currentHourMin = today.toTimeString().substring(0, 5);
-      
+
       // Trier les heures pour être sûr
-      times.sort(); 
+      times.sort();
 
       for (const fixedTime of times) {
         if (fixedTime > currentHourMin) {
@@ -160,7 +158,7 @@ export const useCreateTask = (familyId: string | undefined) => {
           return nextDate;
         }
       }
-      
+
       // Si aucune heure trouvée aujourd'hui, prendre la première de demain
       const [hours, minutes] = times[0].split(':').map(Number);
       const nextDate = new Date(today);
@@ -168,7 +166,7 @@ export const useCreateTask = (familyId: string | undefined) => {
       nextDate.setHours(hours, minutes, 0, 0);
       return nextDate;
     }
-    
+
     return startDateTime;
   };
 
@@ -214,7 +212,6 @@ export const useCreateTask = (familyId: string | undefined) => {
       }
 
       await taskService.createTask(familyId, createTaskData);
-      console.log('✅ Tâche créée');
 
       Alert.alert('Succès', 'Tâche créée avec succès !', [
         { text: 'OK', onPress: () => router.back() },

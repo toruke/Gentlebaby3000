@@ -1,16 +1,16 @@
 
-import { 
-  collection, 
-  doc, 
-  serverTimestamp, 
+import {
+  collection,
+  doc,
+  serverTimestamp,
   writeBatch, // 🔹 On utilise writeBatch pour la sécurité des données
   Timestamp,
   FieldValue,
 } from 'firebase/firestore';
-import { 
-  deleteObject, 
-  getDownloadURL, 
-  ref, 
+import {
+  deleteObject,
+  getDownloadURL,
+  ref,
   uploadBytes,
 } from 'firebase/storage';
 import { auth, db, storage } from '../../config/firebaseConfig';
@@ -18,10 +18,10 @@ import { auth, db, storage } from '../../config/firebaseConfig';
 // Définition des types pour la clarté
 export type FamilyMemberRole = 'tuteur' | 'tuteur secondaire' | 'membre' | 'enfant';
 export type FamilyMember = {
-    userId: string;
-    role: FamilyMemberRole;
-    joinedAt: Timestamp | FieldValue; // ou Timestamp
-    displayName?: string;
+  userId: string;
+  role: FamilyMemberRole;
+  joinedAt: Timestamp | FieldValue; // ou Timestamp
+  displayName?: string;
 };
 
 /**
@@ -45,10 +45,10 @@ export async function createFamily(familyName: string, imageUri?: string) {
 
   // 🛠 2. Préparation des références (sans écrire tout de suite)
   const batch = writeBatch(db); // On initialise un "batch"
-  
+
   // Réf du document Famille
   const familyRef = doc(collection(db, 'family'));
-  
+
   // Réf du document Membre (dans la sous-collection)
   // Chemin: family/{familyId}/members/{userId}
   const memberRef = doc(db, 'family', familyRef.id, 'members', user.uid);
@@ -62,7 +62,7 @@ export async function createFamily(familyName: string, imageUri?: string) {
     createdAt: serverTimestamp(),
     photoUrl: imageUrl,
     // ⚠️ CRUCIAL : On garde un tableau simple des IDs pour les requêtes "array-contains"
-    memberIds: [user.uid], 
+    memberIds: [user.uid],
     babies: [],
   };
 
@@ -92,7 +92,8 @@ export async function deleteFamilyPhoto(photoUrl: string) {
     await deleteObject(photoRef);
     console.log('✅ Photo supprimée avec succès');
   } catch (error) {
-    console.error('❌ Erreur de suppression de la photo :', error);
-    // On ne throw pas forcément ici pour ne pas bloquer une suppression de doc si l'image n'existe plus
+    // CORRECTION : On loggue l'erreur pour le debug, mais on ne la "throw" pas
+    // comme ça le linter est content (variable utilisée) et l'app ne plante pas.
+    console.warn('⚠️ Erreur suppression photo (non bloquant) :', error);
   }
 }

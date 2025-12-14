@@ -16,65 +16,55 @@ export default function RootLayout() {
   return (
     <View style={styles.container}>
       <BackgroundShapes style={styles.background} />
-      
+
       <View style={styles.stackContainer}>
-        <Stack 
-          screenOptions={{ 
+        <Stack
+          screenOptions={{
             headerTitleAlign: 'center',
             contentStyle: { backgroundColor: 'transparent' },
           }}
         >
-          <Stack.Screen 
-            name="index" 
-            options={{ 
+          <Stack.Screen
+            name="index"
+            options={{
               title: 'Bienvenue',
               headerShown: false,
-            }} 
+            }}
           />
-          
-          <Stack.Screen 
-            name="auth/login/index" 
-            options={{ 
+
+          <Stack.Screen
+            name="auth/login/index"
+            options={{
               title: 'Connexion',
               headerBackTitle: 'Retour',
               headerTransparent: true,
               headerTintColor: '#1e293b',
-            }} 
+            }}
           />
-          
-          <Stack.Screen 
-            name="auth/signup/index" 
-            options={{ 
+
+          <Stack.Screen
+            name="auth/signup/index"
+            options={{
               title: 'Inscription',
               headerBackTitle: 'Retour',
               headerTransparent: true,
               headerTintColor: '#1e293b',
-            }} 
+            }}
           />
-          <Stack.Screen 
-            name="user/EditingProfileUser" 
-            options={{ 
+          <Stack.Screen
+            name="user/EditingProfileUser"
+            options={{
               title: 'Modification de mon profil utilisateur',
               headerBackTitle: 'Retour',
               headerTransparent: true,
               headerTintColor: '#1e293b',
-            }} 
+            }}
           />
-          <Stack.Screen 
-            name="family/ModifyRole" 
-            options={{ 
-              title: 'Modification du rôle',
-              headerBackTitle: 'Retour',
-              headerTransparent: true,
-              headerTintColor: '#1e293b', 
-            }} 
-          />
-          
-          <Stack.Screen 
-            name="(tabs)" 
-            options={{ 
-              headerShown: false, 
-            }} 
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerShown: false,
+            }}
           />
         </Stack>
       </View>
