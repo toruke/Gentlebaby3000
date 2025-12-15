@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -18,34 +18,38 @@ import ChildrenTab from '@/src/components/management/childrenTab';
 import DevicesTab from '@/src/components/management/devicesTab';
 import MembersTab from '@/src/components/management/membersTab';
 
+import { useDeviceDiscovery } from '@/src/hooks/useDeviceDiscovery';
+import { DeviceScannerModal } from '@/src/components/deviceScannerModal';
+import { linkDeviceToMember, unlinkDeviceFromMember } from '@/src/services/familyService';
+import { DiscoveredDevice } from '@/src/models/device';
+
 type TabType = 'members' | 'children' | 'devices';
 
-// 1. Définition du type pour un Membre (basé sur tes données Firestore)
 interface Member {
   userId: string;
   role: string;
   displayName?: string;
   photoUrl?: string;
   email?: string;
-  devices?: string | null;
+  device?: string | null;
 }
 
-// 2. Définition du type pour un Appareil (Device)
 interface DeviceItem {
   deviceId: string;
   serialNumber?: string;
   type?: 'EMITTER' | 'RECEIVER';
-  status?: 'online' | 'offline' | 'pairing';
-  pairedAt?: Timestamp; // Tu peux mettre Timestamp si tu l'importes, sinon any ou Date
-  lastSeen?: Timestamp;
+  status?: string;
+  pairedAt?: unknown;
+  lastSeen?: unknown;
+  [key: string]: unknown;
 }
 
 interface FamilyData {
   id: string;
   name: string;
-  babies: Child[];
-  members: Member[]; // CORRECTION : Typage strict ici
-  devices: DeviceItem[]; // CORRECTION : Typage strict ici
+  babies: Child[]; 
+  members: Member[];
+  devices: DeviceItem[];
 }
 
 export default function ManagementScreen({ familyId }: { familyId?: string }) {
@@ -53,22 +57,27 @@ export default function ManagementScreen({ familyId }: { familyId?: string }) {
   const [familyData, setFamilyData] = useState<FamilyData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // --- SCANNER UDP ---
+  const [isScannerVisible, setScannerVisible] = useState(false);
+  const [targetMemberId, setTargetMemberId] = useState<string | null>(null);
+  
+  const { startScanning, stopScanning, foundDevices } = useDeviceDiscovery();
+  const filteredDevices = foundDevices.filter(d => d.type === 'RECEIVER');
+
   useEffect(() => {
     if (!familyId) return;
 
     setLoading(true);
 
-    // 1. Écoute du Document Principal (Info Famille + Enfants)
+    // 1. Écoute du document FAMILLE (Pour le nom seulement)
     const familyRef = doc(db, 'family', familyId);
     const unsubFamily = onSnapshot(familyRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        
-        // On met à jour le state partiellement
         setFamilyData(prev => ({
           id: docSnap.id,
           name: data.name || 'Ma Famille',
-          babies: data.babies || [], 
+          babies: prev?.babies || [], 
           members: prev?.members || [], 
           devices: prev?.devices || [], 
         }));
@@ -77,49 +86,66 @@ export default function ManagementScreen({ familyId }: { familyId?: string }) {
       }
     });
 
-    // 2. Écoute de la Sous-collection 'members'
+    // 2. Écoute de la Sous-Collection CHILDREN
+    const childrenRef = collection(db, 'family', familyId, 'children');
+    const unsubChildren = onSnapshot(childrenRef, (querySnap) => {
+      const childrenList: Child[] = [];
+      querySnap.forEach((doc) => {
+        const d = doc.data();
+        childrenList.push({
+          id: doc.id,
+          childId: doc.id,
+          firstName: d.firstName,
+          lastName: d.lastName,
+          gender: d.gender,
+          photoUrl: d.photoUrl, 
+          birthday: d.birthday,
+          device: d.device,
+        } as Child);
+      });
+
+      setFamilyData(prev => {
+        if (!prev) return null;
+        return { ...prev, babies: childrenList };
+      });
+      setLoading(false); 
+    });
+
+    // 3. Écoute Membres
     const membersRef = collection(db, 'family', familyId, 'members');
     const unsubMembers = onSnapshot(membersRef, (querySnap) => {
-      // CORRECTION : On type le tableau temporaire
       const membersList: Member[] = []; 
-      
       querySnap.forEach((doc) => {
-        const data = doc.data();
-        // On pousse un objet qui respecte l'interface Member
+        const d = doc.data();
         membersList.push({ 
-          userId: doc.id,
-          role: data.role || 'membre',
-          displayName: data.displayName,
-          photoUrl: data.photoUrl,
-          email: data.email,
-          devices: data.devices,
+          userId: doc.id, 
+          role: d.role,
+          displayName: d.displayName,
+          photoUrl: d.photoUrl,
+          email: d.email,
+          device: d.device || d.devices, 
         });
       });
 
-      // On met à jour juste la partie membres
       setFamilyData(prev => {
         if (!prev) return null;
         return { ...prev, members: membersList };
       });
-      setLoading(false);
     });
 
-    // 3. Écoute de la Sous-collection 'devices'
+    // 4. Écoute Appareils
     const devicesRef = collection(db, 'family', familyId, 'devices');
     const unsubDevices = onSnapshot(devicesRef, (querySnap) => {
-      // CORRECTION : On type le tableau temporaire
       const devicesList: DeviceItem[] = [];
-      
       querySnap.forEach((doc) => {
-        const data = doc.data();
-        // On pousse un objet qui respecte l'interface DeviceItem
+        const d = doc.data();
         devicesList.push({
           deviceId: doc.id,
-          serialNumber: data.serialNumber,
-          type: data.type,
-          status: data.status,
-          pairedAt: data.pairedAt,
-          lastSeen: data.lastSeen,
+          serialNumber: d.serialNumber,
+          type: d.type,
+          status: d.status,
+          pairedAt: d.pairedAt,
+          lastSeen: d.lastSeen,
         });
       });
         
@@ -129,18 +155,66 @@ export default function ManagementScreen({ familyId }: { familyId?: string }) {
       });
     });
 
-    // Nettoyage des 3 écoutes quand on quitte l'écran
     return () => {
       unsubFamily();
+      unsubChildren();
       unsubMembers();
       unsubDevices();
     };
   }, [familyId]);
 
-
   // --- ACTIONS ---
+
   const handleInviteMember = () => {
     Alert.alert('Inviter un membre', 'Fonctionnalité d\'invitation à venir.');
+  };
+
+  const handleManageDeviceMember = (member: Member) => {
+    if (member.device) {
+      Alert.alert(
+        'Dissocier l\'appareil',
+        `Voulez-vous retirer l'appareil de ${member.displayName} ?`,
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { 
+            text: 'Dissocier', 
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                if (!familyId) return;
+                await unlinkDeviceFromMember(familyId, member.userId);
+                Alert.alert('Succès', 'Appareil dissocié.');
+              } catch (e) {
+                console.error(e);
+                Alert.alert('Erreur', 'Impossible de dissocier.');
+              }
+            },
+          },
+        ],
+      );
+    } else {
+      setTargetMemberId(member.userId);
+      setScannerVisible(true);
+      startScanning();
+    }
+  };
+
+  const handleSelectDeviceFromScanner = async (device: DiscoveredDevice) => {
+    if (!targetMemberId || !familyId) return;
+    try {
+      stopScanning();
+      await linkDeviceToMember(familyId, targetMemberId, {
+        serialNumber: device.id,
+        type: device.type,
+      });
+      setScannerVisible(false);
+      setTargetMemberId(null);
+      Alert.alert('Succès', 'Babyphone associé au membre !');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erreur', 'Échec de l\'association.');
+      startScanning();
+    }
   };
 
   if (loading) return <ActivityIndicator size="large" color="#6b46c1" style={styles.center} />;
@@ -152,25 +226,30 @@ export default function ManagementScreen({ familyId }: { familyId?: string }) {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{familyData.name}</Text>
-        <Text style={styles.headerSubtitle}>Tableau de bord de gestion</Text>
-      </View>
+      <DeviceScannerModal
+        visible={isScannerVisible}
+        devices={filteredDevices}
+        onClose={() => {
+          setScannerVisible(false);
+          stopScanning();
+          setTargetMemberId(null);
+        }}
+        onSelectDevice={handleSelectDeviceFromScanner}
+      />
 
-      {/* BARRE D'ONGLETS */}
       <View style={styles.tabBar}>
         <TabButton label={`Membres (${membersCount})`} isActive={activeTab === 'members'} onPress={() => setActiveTab('members')} />
         <TabButton label={`Enfants (${childrenCount})`} isActive={activeTab === 'children'} onPress={() => setActiveTab('children')} />
         <TabButton label={`Appareils (${devicesCount})`} isActive={activeTab === 'devices'} onPress={() => setActiveTab('devices')} />
       </View>
 
-      {/* CONTENU */}
       <ScrollView contentContainerStyle={styles.contentContainer}>
         {activeTab === 'members' && (
           <MembersTab 
-            members={familyData.members} 
-            onInvite={handleInviteMember} 
+            members={familyData.members}
+            familyId={familyData.id} 
+            onInvite={handleInviteMember}
+            onManageDevice={handleManageDeviceMember} 
           />
         )}
 
@@ -184,9 +263,6 @@ export default function ManagementScreen({ familyId }: { familyId?: string }) {
         {activeTab === 'devices' && (
           <DevicesTab 
             devices={familyData.devices} 
-            // Si ton DevicesTab gère lui-même le scan, tu peux enlever cette prop si elle n'est pas requise, 
-            // mais ici je la laisse pour correspondre à tes types précédents.
-            // Assure-toi que DevicesTab accepte familyId :
             familyId={familyData.id} 
           />
         )}
@@ -195,6 +271,7 @@ export default function ManagementScreen({ familyId }: { familyId?: string }) {
   );
 }
 
+// 🟢 Composant TabButton (qui était manquant dans votre version)
 const TabButton = ({ label, isActive, onPress }: { label: string, isActive: boolean, onPress: () => void }) => (
   <TouchableOpacity style={[styles.tabItem, isActive && styles.tabItemActive]} onPress={onPress}>
     <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{label}</Text>
@@ -204,9 +281,6 @@ const TabButton = ({ label, isActive, onPress }: { label: string, isActive: bool
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { backgroundColor: '#6b46c1', paddingVertical: 20, paddingHorizontal: 20 },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  headerSubtitle: { fontSize: 14, color: '#e2e8f0', opacity: 0.8 },
   tabBar: { flexDirection: 'row', backgroundColor: '#fff', elevation: 4 },
   tabItem: { flex: 1, paddingVertical: 16, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent' },
   tabItemActive: { borderBottomColor: '#6b46c1' },

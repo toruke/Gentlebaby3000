@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Timestamp } from 'firebase/firestore'; // 1. Import nécessaire pour le typage
+import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { Timestamp } from 'firebase/firestore'; 
 
 import { Child } from '@/src/models/child';
 
@@ -13,27 +13,50 @@ interface ChildrenTabProps {
   familyId: string;
 }
 
+// 🟢 TYPE FLEXIBLE : On accepte les variantes possibles venant de Firebase
+// Cela permet de lire 'birthDate' (DB) ou 'birthday' (Modèle) sans erreur
+type ChildData = Child & { 
+  id?: string; 
+  birthDate?: Timestamp | Date; 
+  gender?: string; // On accepte string pour gérer les majuscules éventuelles
+};
+
 export default function ChildrenTab({ childrenData, familyId }: ChildrenTabProps) {
   const router = useRouter();
   
   const safeChildren = childrenData || [];
   const hasChildren = safeChildren.length > 0;
 
-  // 2. Correction du typage 'any' pour birthday
-  const getAge = (birthday: Date | Timestamp | undefined) => {
-    if (!birthday) return '';
+  // --- 1. CALCUL DE L'ÂGE ROBUSTE ---
+  const getAge = (dateInput: Date | Timestamp | undefined): string => {
+    if (!dateInput) return ''; // Pas de date, pas d'affichage
     
-    // Vérification sécurisée du type
     let birthDate: Date;
-    if (birthday instanceof Timestamp) {
-      birthDate = birthday.toDate();
+    
+    if (dateInput instanceof Timestamp) {
+      birthDate = dateInput.toDate();
     } else {
-      birthDate = new Date(birthday as Date);
+      birthDate = dateInput as Date;
     }
 
-    const ageDifMs = Date.now() - birthDate.getTime();
-    const ageDate = new Date(ageDifMs); 
-    return Math.abs(ageDate.getUTCFullYear() - 1970) + ' ans';
+    if (isNaN(birthDate.getTime())) return '';
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    // Affichage en mois pour les bébés < 1 an
+    if (age === 0) {
+      let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+      if (today.getDate() < birthDate.getDate()) months--;
+      return `${Math.max(0, months)} mois`;
+    }
+
+    return `${age} ans`;
   };
   
   const handleGoToCreate = () => {
@@ -42,10 +65,17 @@ export default function ChildrenTab({ childrenData, familyId }: ChildrenTabProps
     });
   };
 
-  const handleGoToProfile = (child: Child) => {
-    // 3. Utilisation de child.childId (défini dans ton modèle) au lieu de (child as any).id
+  const handleGoToProfile = (child: ChildData) => {
+    const targetId = child.childId || child.id;
+
+    if (!targetId) {
+      console.error('❌ Erreur Navigation : ID enfant manquant', child);
+      Alert.alert('Erreur', 'Impossible d\'ouvrir le profil : ID manquant.');
+      return;
+    }
+
     router.push({
-      pathname: `/family/${familyId}/child/${child.childId}`,
+      pathname: `/family/${familyId}/child/${targetId}`,
     });
   };
 
@@ -71,26 +101,55 @@ export default function ChildrenTab({ childrenData, familyId }: ChildrenTabProps
 
       <FlatList
         data={safeChildren}
-        // 4. Correction keyExtractor sans 'any'
-        keyExtractor={(item) => item.childId || Math.random().toString()}
+        keyExtractor={(item) => {
+          const itemData = item as ChildData;
+          return item.childId || itemData.id || Math.random().toString();
+        }}
         scrollEnabled={false}
         renderItem={({ item }) => {
-          const avatarSource = item.gender === 'female' ? defaultAvatarGirl : defaultAvatar;
+          // 🟢 Conversion vers notre type flexible
+          const childItem = item as ChildData;
           
+          // --- 2. GESTION DU GENRE ---
+          // On normalise en minuscule pour éviter les soucis (Female vs female)
+          const genderNormalized = childItem.gender ? childItem.gender.toLowerCase() : '';
+          
+          let genderLabel = 'Enfant';
+          if (genderNormalized === 'male') genderLabel = 'Garçon';
+          else if (genderNormalized === 'female') genderLabel = 'Fille';
+
+          // --- 3. GESTION DE L'AVATAR ---
+          const avatarSource = genderNormalized === 'female' ? defaultAvatarGirl : defaultAvatar;
+          
+          // --- 4. GESTION DE LA DATE ---
+          // On prend celle qui existe
+          const dateToUse = childItem.birthDate || childItem.birthday;
+
           return (
             <TouchableOpacity 
               style={styles.cardItem} 
-              onPress={() => handleGoToProfile(item)}
+              onPress={() => handleGoToProfile(childItem)}
             >
               <Image source={avatarSource} style={styles.itemImage} />
               
               <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.firstName} {item.lastName}</Text>
-                <Text style={styles.itemSub}>
-                  {item.gender === 'male' ? 'Garçon' : item.gender === 'female' ? 'Fille' : 'Enfant'} 
-                  {' • '} 
-                  {getAge(item.birthday)}
-                </Text>
+                <Text style={styles.itemName}>{childItem.firstName} {childItem.lastName}</Text>
+                
+                <View style={styles.subInfoRow}>
+                  <Text style={styles.itemSub}>
+                    {genderLabel}
+                  </Text>
+                    
+                  {/* N'affiche le point et l'âge que si la date existe */}
+                  {dateToUse && (
+                    <>
+                      <Text style={styles.dot}>•</Text>
+                      <Text style={styles.ageText}>
+                        {getAge(dateToUse)}
+                      </Text>
+                    </>
+                  )}
+                </View>
               </View>
               
               <View style={styles.chevronContainer}>
@@ -123,7 +182,13 @@ const styles = StyleSheet.create({
   itemImage: { width: 50, height: 50, borderRadius: 25, marginRight: 16 },
   itemInfo: { flex: 1 },
   itemName: { fontSize: 16, fontWeight: 'bold', color: '#2d3748' },
+  
+  // Styles alignés
+  subInfoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   itemSub: { fontSize: 14, color: '#718096' },
+  dot: { marginHorizontal: 6, color: '#CBD5E0', fontSize: 10 },
+  ageText: { fontSize: 14, fontWeight: '700', color: '#6b46c1' },
+
   chevronContainer: { padding: 5 },
   chevron: { fontSize: 18, color: '#CBD5E0', fontWeight: 'bold' },
 });

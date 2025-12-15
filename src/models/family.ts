@@ -22,20 +22,3 @@ export interface FamilySettings {
     health: boolean;
   };
 }
-
-export interface UpcomingActivity {
-  id: string;
-  childName: string;
-  taskName: string;
-  scheduledTime: Date;
-  assignedTo: string;
-  type: 'HEALTH' | 'FEEDING' | 'SLEEP' | 'HYGIENE';
-}
-export type Family = {
-    familyId: string;
-    name: string;
-    createdBy: string;
-    createdAt: Date;
-    photoUrl?: string;
-    members: string[];
-};
