@@ -1,4 +1,3 @@
-
 import {
   collection,
   doc,
@@ -15,6 +14,9 @@ import {
 } from 'firebase/storage';
 import { auth, db, storage } from '../../config/firebaseConfig';
 
+// Import du modèle Device (créé précédemment dans src/models/Device.ts)
+import { Device } from '../models/device';
+
 // Définition des types pour la clarté
 export type FamilyMemberRole = 'tuteur' | 'tuteur secondaire' | 'membre' | 'enfant';
 export type FamilyMember = {
@@ -22,6 +24,8 @@ export type FamilyMember = {
   role: FamilyMemberRole;
   joinedAt: Timestamp | FieldValue; // ou Timestamp
   displayName?: string;
+  // Ajout du champ optionnel pour TypeScript, car il est ajouté dynamiquement plus tard
+  devices?: string | null; 
 };
 
 /**
@@ -84,7 +88,6 @@ export async function createFamily(familyName: string, imageUri?: string) {
   return familyRef.id;
 }
 
-
 export async function deleteFamilyPhoto(photoUrl: string) {
   if (!photoUrl) return;
   try {
@@ -93,7 +96,52 @@ export async function deleteFamilyPhoto(photoUrl: string) {
     console.log('✅ Photo supprimée avec succès');
   } catch (error) {
     // CORRECTION : On loggue l'erreur pour le debug, mais on ne la "throw" pas
-    // comme ça le linter est content (variable utilisée) et l'app ne plante pas.
     console.warn('⚠️ Erreur suppression photo (non bloquant) :', error);
   }
+}
+
+/**
+ * 🆕 Associe un appareil découvert (via UDP) à un membre de la famille.
+ * Crée le document dans la sous-collection 'devices' et met à jour le membre.
+ */
+export async function linkDeviceToMember(
+  familyId: string, 
+  userId: string, 
+  device: { serialNumber: string, type: string },
+) {
+  // Sécurités basiques
+  if (!familyId || !userId || !device.serialNumber) {
+    throw new Error('Informations manquantes pour l\'association de l\'appareil.');
+  }
+
+  const batch = writeBatch(db);
+
+  // 1. Référence au document Device
+  // Chemin : family/{familyId}/devices/{serialNumber}
+  const deviceRef = doc(db, 'family', familyId, 'devices', device.serialNumber);
+
+  // Préparation des données du device selon le modèle Device
+  const newDeviceData: Device = {
+    serialNumber: device.serialNumber,
+    type: device.type as 'EMITTER' | 'RECEIVER',
+    status: 'online',
+    pairedAt: serverTimestamp(),
+    lastSeen: serverTimestamp(),
+  };
+
+  // 2. Référence au Membre existant
+  // Chemin : family/{familyId}/members/{userId}
+  const memberRef = doc(db, 'family', familyId, 'members', userId);
+
+  // 3. Ajout des opérations au batch
+  batch.set(deviceRef, newDeviceData); // Crée ou écrase le device
+  
+  // Met à jour le champ 'devices' du membre avec le numéro de série
+  batch.update(memberRef, {
+    devices: device.serialNumber, 
+  });
+
+  // 4. Exécution atomique
+  await batch.commit();
+  console.log(`✅ Device ${device.serialNumber} associé à ${userId}`);
 }

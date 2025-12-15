@@ -1,5 +1,5 @@
-// Babyphone Emetteur (Côté Bébé) + Calibration + Anti-Pic
-// Envoie l'audio UDP et enregistre sur PC via TCP
+// Babyphone Emetteur (Côté Bébé) + Calibration + Anti-Pic + Découverte
+// Envoie l'audio UDP, enregistre sur PC via TCP, et s'annonce sur le réseau
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -8,14 +8,20 @@
 
 // --- Configuration Wi-Fi ---
 const char *ssid = "ssid";
-const char *password = "mdp";
+const char *password = "password";
 // ---------------------------
 
+// --- NOUVEAU : GESTION DÉCOUVERTE ---
+// Mettre à true si l'appareil est déjà associé (plus tard via mémoire interne)
+bool isPaired = false; 
+const int DISCOVERY_PORT = 12345;
+unsigned long lastDiscoveryTime = 0;
+
 // --- CONFIGURATION RÉSEAU ---
-IPAddress receiverIp(192,168,129,191); // IP Babyphone Parent
+IPAddress receiverIp(xxx,xxx,xxx,xxx); // IP Babyphone Parent
 unsigned int udpPort = 4200;
 
-IPAddress fileReceiverIp(192, 168, 1, 10); // IP de votre PC
+IPAddress fileReceiverIp(xxx,xxx,xxx,xxx); // IP de votre PC
 const int fileReceiverPort = 5000;
 
 WiFiUDP Udp;          
@@ -28,20 +34,10 @@ const int bufferSize = 256;
 uint16_t audioBuffer[bufferSize];
 unsigned long lastSampleTime = 0;
 
-// ===============================================
-// --- RÉGLAGES DES SEUILS (A AJUSTER AVEC LE TRACEUR) ---
-// ===============================================
-
-// 1. Seuil BAS (Silence) : En dessous, on arrête l'enregistrement après un délai
-const float QUIET_THRESHOLD_RMS = 40.0;  
-
-// 2. Seuil MOYEN (Déclenchement) : Au dessus, on commence à enregistrer
-const float NOISE_THRESHOLD_RMS = 80.0; 
-
-// 3. Seuil HAUT (Plafond Anti-Artefact) : 
-// Si le bruit dépasse ça, c'est probablement un bug/tic -> ON COUPE !
-const float MAX_NOISE_THRESHOLD = 500.0; 
-
+// --- SEUILS VAD ---
+const float QUIET_THRESHOLD_RMS = 1050.0;  
+const float NOISE_THRESHOLD_RMS = 1200.0; 
+const float MAX_NOISE_THRESHOLD = 2000.0; 
 const long MIN_RECORDING_DURATION_MS = 2000; 
 
 // Variables d'état
@@ -68,6 +64,24 @@ struct WavHeader {
 
 // --- FONCTIONS ---
 
+// NOUVEAU : Fonction de publicité UDP
+void broadcastPresence() {
+  if (millis() - lastDiscoveryTime > 2000) { // Toutes les 2 secondes
+    IPAddress broadcastIp(255, 255, 255, 255);
+    WiFiUDP UdpDiscovery; // Instance temporaire pour ne pas bloquer le flux audio
+    UdpDiscovery.beginPacket(broadcastIp, DISCOVERY_PORT);
+    
+    // Format: BABYPHONE|EMITTER|MAC
+    String msg = "BABYPHONE|EMITTER|" + WiFi.macAddress();
+    
+    UdpDiscovery.print(msg);
+    UdpDiscovery.endPacket();
+    
+    lastDiscoveryTime = millis();
+    // Serial.println("Broadcast sent: " + msg); 
+  }
+}
+
 float calculateRMS(const uint16_t* data, int length) {
   long sum = 0;
   for (int i = 0; i < length; i++) {
@@ -89,7 +103,6 @@ void createFinalWavHeader(uint8_t* headerBuffer, uint32_t finalDataSize) {
     memcpy(headerBuffer, (const uint8_t*)&header, sizeof(WavHeader));
 }
 
-// Fonction pour arrêter proprement l'enregistrement
 void stopRecording(bool isError = false) {
     if (isRecording && tcpClient.connected()) {
         if (!isError) {
@@ -98,7 +111,7 @@ void stopRecording(bool isError = false) {
              tcpClient.write(finalHeader, 44); 
              Serial.println(" -> Fin normale.");
         } else {
-             Serial.println(" -> COUPURE D'URGENCE (Bruit trop fort/Erreur).");
+             Serial.println(" -> COUPURE D'URGENCE.");
         }
     }
     tcpClient.stop();
@@ -116,12 +129,17 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) { delay(500); }
   Udp.begin(udpPort);
   
-  // En-têtes pour le Traceur Série (Légende)
-  Serial.println("RMS_Actuel,Seuil_Silence,Seuil_Declenchement,Seuil_Max_Plafond");
+  Serial.println("Emetteur pret. IP: " + WiFi.localIP().toString());
+  Serial.println("Mac: " + WiFi.macAddress());
 }
 
 void loop() {
-  // 1. Acquisition
+  // 1. GESTION DECOUVERTE (Si pas encore associé)
+  if (!isPaired) {
+    broadcastPresence();
+  }
+
+  // 2. Acquisition Audio
   unsigned long samplePeriod = 1000000UL / sampleRate; 
   for (int i = 0; i < bufferSize; i++) {
     unsigned long now = micros();
@@ -132,36 +150,24 @@ void loop() {
     lastSampleTime = micros();
   }
 
-  // 2. Diffusion UDP
+  // 3. Diffusion UDP (Toujours actif pour le récepteur)
   Udp.beginPacket(receiverIp, udpPort);
   Udp.write((const uint8_t*)audioBuffer, bufferSize * 2); 
   Udp.endPacket();
 
-  // 3. Calcul RMS
+  // 4. Calcul RMS & Enregistrement PC
   float rms = calculateRMS(audioBuffer, bufferSize);
-
-  // 4. --- AFFICHAGE POUR CALIBRATION (TRACEUR SERIE) ---
-  // Affichez ceci dans Outils > Traceur Série
-  Serial.print(rms);
-  Serial.print(",");
-  Serial.print(QUIET_THRESHOLD_RMS);
-  Serial.print(",");
-  Serial.print(NOISE_THRESHOLD_RMS);
-  Serial.print(",");
-  Serial.println(MAX_NOISE_THRESHOLD);
-
-  // 5. Logique d'enregistrement
   
-  // Sécurité anti-pic : Si le bruit est TROP fort (artefact), on coupe tout de suite
+  // Traceur série (décommenter si besoin de recalibrer)
+  // Serial.print(rms); Serial.print(","); Serial.print(NOISE_THRESHOLD_RMS); Serial.println(...);
+
+  // Sécurité anti-pic
   if (rms > MAX_NOISE_THRESHOLD) {
-      if (isRecording) {
-          stopRecording(true); // true = arrêt d'urgence
-      }
-      return; // On ne fait rien d'autre sur ce cycle
+      if (isRecording) stopRecording(true);
+      return; 
   }
 
   if (!isRecording) {
-      // Démarrage : Bruit > Seuil ET Bruit < Plafond
       if (rms > NOISE_THRESHOLD_RMS) {
           if (tcpClient.connect(fileReceiverIp, fileReceiverPort)) {
               writeWavHeader(tcpClient);
@@ -181,10 +187,10 @@ void loop() {
           bool minDurationMet = (millis() - recordingStartTime) > MIN_RECORDING_DURATION_MS;
 
           if (isQuiet && minDurationMet) {
-              stopRecording(false); // Fin normale
+              stopRecording(false); 
           }
       } else {
-          isRecording = false; // Perte connexion
+          isRecording = false; 
       }
   }
 }

@@ -1,14 +1,20 @@
-// Babyphone Récepteur (Côté Parent)
+// Babyphone Récepteur (Côté Parent) + Découverte
 // Reçoit les paquets audio via Wi-Fi (UDP) et les joue avec PWMAudio (GP16)
+// S'annonce sur le réseau tant qu'il n'est pas associé.
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <PWMAudio.h>
 
 // --- Configuration Wi-Fi ---
-const char *ssid = "SSID";
-const char *password = "MOTDEPASSE";
+const char *ssid = "ssid";
+const char *password = "password";
 // ---------------------------
+
+// --- NOUVEAU : GESTION DÉCOUVERTE ---
+bool isPaired = false; 
+const int DISCOVERY_PORT = 12345;
+unsigned long lastDiscoveryTime = 0;
 
 // Configuration du Récepteur
 unsigned int udpPort = 4200;
@@ -17,49 +23,59 @@ PWMAudio pwm(16);
 
 // --- PARAMÈTRES AUDIO ---
 const int sampleRate = 8000;
-// Doit correspondre à l'émetteur
 const int packetSizeSamples = 256; 
 
-// --- TAMPON CIRCULAIRE (Le Réservoir) ---
-// On prévoit un réservoir assez grand (4096 échantillons = ~0.5 seconde d'audio)
-// Cela permet d'absorber les retards du WiFi.
+// --- TAMPON CIRCULAIRE ---
 const int RING_BUFFER_SIZE = 4096;
 volatile int16_t ringBuffer[RING_BUFFER_SIZE];
-volatile int head = 0; // Là où on écrit (WiFi)
-volatile int tail = 0; // Là où on lit (Audio)
+volatile int head = 0; 
+volatile int tail = 0; 
 
 // Variables de traitement audio
 int32_t smoothOffset = 0;
 const float alpha = 0.99f;
-const int gain = 4; // Gain modéré pour éviter saturation
+const int gain = 4; 
 
-// Fonction pour ajouter des données dans le réservoir
+// --- FONCTIONS ---
+
+// NOUVEAU : Fonction de publicité UDP
+void broadcastPresence() {
+  if (millis() - lastDiscoveryTime > 2000) { // Toutes les 2 secondes
+    IPAddress broadcastIp(255, 255, 255, 255);
+    
+    // Utilisation d'une instance UDP locale pour ne pas perturber l'écoute audio
+    WiFiUDP UdpDiscovery; 
+    UdpDiscovery.beginPacket(broadcastIp, DISCOVERY_PORT);
+    
+    // Format: BABYPHONE|RECEIVER|MAC
+    String msg = "BABYPHONE|RECEIVER|" + WiFi.macAddress();
+    
+    UdpDiscovery.print(msg);
+    UdpDiscovery.endPacket();
+    
+    lastDiscoveryTime = millis();
+  }
+}
+
 void writeToBuffer(uint16_t* data, int length) {
   for (int i = 0; i < length; i++) {
     int nextHead = (head + 1) % RING_BUFFER_SIZE;
-    if (nextHead != tail) { // Si le réservoir n'est pas plein
-      // Conversion immédiate et filtrage DC à l'entrée
+    if (nextHead != tail) { 
       uint16_t raw = data[i];
       smoothOffset = (int32_t)(alpha * smoothOffset + (1.0f - alpha) * raw);
       int16_t sample = (int16_t)((raw - smoothOffset) * gain);
-      
       ringBuffer[head] = sample;
       head = nextHead;
     }
   }
 }
 
-// --- CALLBACK AUDIO (Interruption) ---
-// C'est le cœur du système. Il tourne tout seul.
 void audioCallback() {
   while (pwm.availableForWrite()) {
     if (head != tail) {
-      // CAS 1 : Il y a de l'audio dans le réservoir
       pwm.write(ringBuffer[tail]);
       tail = (tail + 1) % RING_BUFFER_SIZE;
     } else {
-      // CAS 2 : Le réservoir est vide (retard WiFi)
-      // SOLUTION AU "TIC" : On écrit 0 (silence) au lieu de s'arrêter ou de répéter
       pwm.write(0);
     }
   }
@@ -67,11 +83,8 @@ void audioCallback() {
 
 void setup() {
   Serial.begin(115200);
-  
-  // OPTIMISATION CRITIQUE : WiFi haute performance
   WiFi.noLowPowerMode();
 
-  // Initialisation tampon
   for(int i=0; i<RING_BUFFER_SIZE; i++) ringBuffer[i] = 0;
 
   pwm.onTransmit(audioCallback);
@@ -81,25 +94,28 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
-  Serial.println(WiFi.localIP());
+  Serial.println("Recepteur pret. IP: " + WiFi.localIP().toString());
+  Serial.println("Mac: " + WiFi.macAddress());
 
   Udp.begin(udpPort);
 }
 
-// Tampon temporaire pour la réception UDP
 uint16_t packetBuffer[packetSizeSamples];
 
 void loop() {
+  // 1. GESTION DECOUVERTE (Si pas encore associé)
+  if (!isPaired) {
+    broadcastPresence();
+  }
+
+  // 2. GESTION AUDIO (Réception)
   int packetSize = Udp.parsePacket();
   
   if (packetSize) {
-    // Si on reçoit des données
     if (packetSize == packetSizeSamples * 2) {
       Udp.read((char*)packetBuffer, packetSize);
-      // On verse l'eau dans le grand réservoir
       writeToBuffer(packetBuffer, packetSizeSamples);
     } else {
-      // Purge en cas de mauvaise taille
       Udp.flush();
     }
   }
