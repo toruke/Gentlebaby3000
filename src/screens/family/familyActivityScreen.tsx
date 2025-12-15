@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  useGlobalSearchParams,
+  useLocalSearchParams,
+  useRouter,
+} from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,40 +15,40 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, useGlobalSearchParams } from 'expo-router';
-import { useFamilyTasks } from '../../hooks/useFamilyTasks';
-import { TaskFilters } from '../../components/activity/taskFilters';
+
 import { TaskCard } from '../../components/activity/taskCard';
+import { TaskFilters } from '../../components/activity/taskFilters';
+import { useFamilyTasks } from '../../hooks/useFamilyTasks';
+import { useTaskNotifications } from '../../hooks/useTaskNotifications';
 
 interface FamilyActivityScreenProps {
   familyId?: string;
 }
 
-export default function FamilyActivityScreen({ 
-  familyId: propFamilyId, 
+export default function FamilyActivityScreen({
+  familyId: propFamilyId,
 }: FamilyActivityScreenProps = {}) {
   const router = useRouter();
-  
+
   // Récupérez les params de toutes les sources possibles
   const localParams = useLocalSearchParams();
   const globalParams = useGlobalSearchParams();
-  
+
   console.log('🔍 Local params:', localParams);
   console.log('🔍 Global params:', globalParams);
   console.log('🔍 Prop familyId:', propFamilyId);
 
   // Essayez toutes les sources possibles dans l'ordre de priorité
-  const familyId = (
+  const familyId =
     propFamilyId ||                // 1. Depuis les props
     localParams.familyId ||        // 2. Depuis les params locaux
     localParams.id ||              // 3. Autre clé possible
     globalParams.familyId ||       // 4. Depuis les params globaux
-    globalParams.id                // 5. Autre clé globale
-  );
+    globalParams.id;               // 5. Autre clé globale
 
   // Convertir en string si c'est un tableau
   const effectiveFamilyId = Array.isArray(familyId) ? familyId[0] : familyId;
-  
+
   console.log('✅ Family ID final:', effectiveFamilyId);
   console.log('✅ Type:', typeof effectiveFamilyId);
 
@@ -61,15 +67,25 @@ export default function FamilyActivityScreen({
     markComplete,
   } = useFamilyTasks(effectiveFamilyId);
 
+  /**
+   * ⚠️ IMPORTANT
+   * On mémorise les tâches pour éviter de recréer des notifications
+   * à chaque render inutilement.
+   */
+  const safeTasks = useMemo(() => tasks ?? [], [tasks]);
+
+  // 🔔 Notifications automatiques liées aux tâches
+  useTaskNotifications(effectiveFamilyId, safeTasks);
+
   // Debug supplémentaire
   useEffect(() => {
     console.log('📊 État du hook:', {
       loading,
-      tasksCount: tasks?.length,
+      tasksCount: safeTasks.length,
       error,
       familyId: effectiveFamilyId,
     });
-  }, [loading, tasks, error, effectiveFamilyId]);
+  }, [loading, safeTasks, error, effectiveFamilyId]);
 
   // Si pas d'ID, montrez un écran d'erreur clair
   if (!effectiveFamilyId || effectiveFamilyId === 'undefined') {
@@ -116,7 +132,7 @@ export default function FamilyActivityScreen({
   }
 
   // Filtrer les tâches
-  const filteredTasks = tasks.filter(task => {
+  const filteredTasks = safeTasks.filter((task) => {
     if (filterType !== 'all' && task.Type !== filterType) return false;
     if (filterStatus !== 'all' && task.Status !== filterStatus) return false;
     return true;
@@ -174,6 +190,11 @@ export default function FamilyActivityScreen({
     router.push(`/family/${effectiveFamilyId}/task`);
   };
 
+  // ✅ IMPORTANT : on envoie familyId à l’écran notifications
+  const handleOpenNotifications = () => {
+    router.push(`/notifications?familyId=${effectiveFamilyId}`);
+  };
+
   return (
     <View style={styles.container}>
       {/* En-tête */}
@@ -181,9 +202,22 @@ export default function FamilyActivityScreen({
         <View style={styles.headerContent}>
           <Text style={styles.title}>📋 Activités</Text>
           <Text style={styles.subtitle}>
-            {tasks.length} tâche(s) • {filteredTasks.length} filtrée(s)
+            {safeTasks.length} tâche(s) • {filteredTasks.length} filtrée(s)
           </Text>
         </View>
+
+        {/* 🔔 Notifications */}
+        <TouchableOpacity
+          onPress={handleOpenNotifications}
+          style={styles.bellButton}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={22}
+            color="#6B7280"
+          />
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.addButton}
           onPress={handleCreateTask}
@@ -203,236 +237,134 @@ export default function FamilyActivityScreen({
       {/* Liste des tâches */}
       <FlatList
         data={filteredTasks}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TaskCard
             task={item}
             onEdit={() => handleEditTask(item.id)}
-            onToggleActive={handleToggleActive}
-            onMarkComplete={handleMarkComplete}
-            onDelete={handleDeleteTask}
+            onToggleActive={() =>
+              handleToggleActive(item.id, item.Active)
+            }
+            onMarkComplete={() => handleMarkComplete(item.id)}
+            onDelete={() => handleDeleteTask(item.id, item.Name)}
           />
         )}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContainer,
-          filteredTasks.length === 0 && styles.emptyListContainer,
-        ]}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={refresh}
             colors={['#8E59FF']}
             tintColor="#8E59FF"
           />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📝</Text>
-            <Text style={styles.emptyText}>Aucune activité pour le moment</Text>
-            <Text style={styles.emptySubtext}>
-              Créez votre première tâche pour commencer à suivre les activités
-            </Text>
-            <TouchableOpacity
-              style={styles.createFirstButton}
-              onPress={handleCreateTask}
-            >
-              <Text style={styles.createFirstButtonText}>Créer une activité</Text>
-            </TouchableOpacity>
-          </View>
-        }
-        ListHeaderComponent={
-          filteredTasks.length > 0 ? (
-            <View style={styles.listHeader}>
-              <Text style={styles.listHeaderText}>
-                {filteredTasks.length} activité(s) trouvée(s)
-              </Text>
-            </View>
-          ) : null
         }
       />
     </View>
   );
 }
 
+/* ===========================
+            STYLES
+=========================== */
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
     padding: 20,
   },
+
   header: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
   },
-  headerContent: {
-    flex: 1,
-  },
+
+  headerContent: { flex: 1 },
+
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#2d3748',
   },
+
   subtitle: {
     fontSize: 14,
     color: '#718096',
     marginTop: 4,
   },
+
+  bellButton: {
+    paddingHorizontal: 10,
+  },
+
   addButton: {
     backgroundColor: '#8E59FF',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
-    marginLeft: 10,
-    shadowColor: '#8E59FF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    marginLeft: 8,
   },
+
   addButtonText: {
     color: '#ffffff',
     fontWeight: '600',
-    fontSize: 14,
   },
-  listContainer: {
-    padding: 16,
-    paddingBottom: 30,
-  },
-  emptyListContainer: {
-    flexGrow: 1,
-  },
-  listHeader: {
-    marginBottom: 16,
-    paddingHorizontal: 8,
-  },
-  listHeaderText: {
-    fontSize: 14,
-    color: '#718096',
-    fontWeight: '500',
-  },
+
   loadingText: {
     marginTop: 12,
     fontSize: 16,
     color: '#6b7280',
-    fontWeight: '500',
   },
+
   errorTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#dc3545',
     marginBottom: 12,
   },
+
   errorText: {
     fontSize: 16,
     color: '#6b7280',
     textAlign: 'center',
     marginBottom: 20,
-    lineHeight: 22,
   },
+
   debugText: {
     fontSize: 12,
-    color: '#a0aec0',
-    fontFamily: 'monospace',
+    color: '#9ca3af',
     marginBottom: 20,
-    backgroundColor: '#f7fafc',
-    padding: 8,
-    borderRadius: 6,
   },
+
   backButton: {
     backgroundColor: '#8E59FF',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 10,
-    marginTop: 8,
-    shadowColor: '#8E59FF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
   },
+
   backButtonText: {
     color: '#ffffff',
     fontWeight: '600',
     fontSize: 16,
   },
+
   retryButton: {
     backgroundColor: '#8E59FF',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 10,
-    marginTop: 8,
-    shadowColor: '#8E59FF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
   },
+
   retryButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#4a5568',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 15,
-    color: '#a0aec0',
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  createFirstButton: {
-    backgroundColor: '#8E59FF',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 10,
-    shadowColor: '#8E59FF',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  createFirstButtonText: {
     color: '#ffffff',
     fontWeight: '600',
     fontSize: 16,

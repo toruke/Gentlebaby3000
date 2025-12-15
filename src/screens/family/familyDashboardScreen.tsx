@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -145,15 +144,8 @@ export default function FamilyDashboardScreen() {
           familyName={familyData.familyName || 'Ma Famille'}
         />
 
-        <View>
-          <TouchableOpacity
-            style={styles.settingBtn}
-            onPress={() => router.push('./')}
-          >
-            <Text style={styles.setting}><Ionicons name="settings" size={30} color="gray" aria-label='paramètres' /></Text>
-          </TouchableOpacity>
 
-        </View>
+
 
         {/* STATS */}
         <View style={styles.stats}>
@@ -237,7 +229,7 @@ export default function FamilyDashboardScreen() {
           </View>
         </View>
       </View>
-    </ScrollView>
+    </ScrollView >
   );
 }
 
