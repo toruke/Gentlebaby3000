@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 
+// Import de tes composants et services réels
 import { DeviceScannerModal } from '@/src/components/deviceScannerModal';
-import { useDeviceDiscovery } from '@/src/hooks/useDeviceDiscover';
+import { useDeviceDiscovery } from '@/src/hooks/useDeviceDiscovery'; 
 import { linkDeviceToMember } from '@/src/services/familyService';
 import { DiscoveredDevice } from '@/src/models/device';
 import { auth } from '@/config/firebaseConfig';
 
-// 1. Interface pour typer les props
-interface DisplayDevice {
+// 1. Définition de l'interface pour typer les appareils (fini les 'any')
+interface DeviceItem {
   deviceId?: string;
   type?: string;
   status?: string;
+  serialNumber?: string;
 }
 
 interface DevicesTabProps {
-  // 2. Utilisation de l'interface au lieu de any[]
-  devices: DisplayDevice[]; 
+  devices: DeviceItem[]; // Typage strict
   familyId: string;
 }
 
@@ -49,6 +50,7 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
 
     try {
       stopScanning();
+      
       await linkDeviceToMember(familyId, user.uid, {
         serialNumber: device.id,
         type: device.type,
@@ -68,6 +70,7 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
 
   return (
     <View style={styles.container}>
+      
       <DeviceScannerModal 
         visible={isModalVisible}
         devices={foundDevices}
@@ -108,6 +111,7 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
                 </Text>
                 <Text style={styles.itemSub}>ID: {item.deviceId}</Text>
               </View>
+              
               <View style={[styles.statusContainer, { backgroundColor: item.status === 'online' ? '#C6F6D5' : '#FED7D7' }]}>
                 <Text style={{ color: item.status === 'online' ? '#22543D' : '#822727', fontSize: 10, fontWeight:'bold' }}>
                   {item.status === 'online' ? 'EN LIGNE' : 'HORS LIGNE'}
@@ -124,6 +128,7 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#2d3748', marginTop: 25, marginBottom: 15 },
+  
   deviceActionButton: {
     backgroundColor: '#EDF2F7',
     paddingVertical: 16,
@@ -134,9 +139,11 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   deviceActionText: { color: '#4A5568', fontSize: 16, fontWeight: '700' },
+
   emptyContainer: { marginTop: 10, padding: 10 },
   emptyText: { color: '#4A5568', fontSize: 16, marginBottom: 4 },
   emptySubText: { color: '#A0AEC0', fontSize: 14 },
+
   cardItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -155,5 +162,6 @@ const styles = StyleSheet.create({
   itemInfo: { flex: 1 },
   itemName: { fontSize: 16, fontWeight: 'bold', color: '#2d3748' },
   itemSub: { fontSize: 14, color: '#718096' },
+  
   statusContainer: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
 });

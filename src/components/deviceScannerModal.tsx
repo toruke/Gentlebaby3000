@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  Modal, 
-  View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ActivityIndicator, 
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { DiscoveredDevice } from '../models/device';
 
@@ -17,11 +17,11 @@ interface DeviceScannerModalProps {
   onSelectDevice: (device: DiscoveredDevice) => void;
 }
 
-export const DeviceScannerModal: React.FC<DeviceScannerModalProps> = ({ 
-  visible, 
-  devices, 
-  onClose, 
-  onSelectDevice, 
+export const DeviceScannerModal: React.FC<DeviceScannerModalProps> = ({
+  visible,
+  devices,
+  onClose,
+  onSelectDevice,
 }) => {
   return (
     <Modal visible={visible} animationType="slide" transparent={true}>
@@ -29,9 +29,9 @@ export const DeviceScannerModal: React.FC<DeviceScannerModalProps> = ({
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Recherche d'appareils...</Text>
           <Text style={styles.subText}>Assurez-vous que le babyphone est branché et non associé.</Text>
-          
+
           {devices.length === 0 && (
-            <ActivityIndicator size="large" color="#4A90E2" style={{margin: 20}}/>
+            <ActivityIndicator size="large" color="#4A90E2" style={{ margin: 20 }} />
           )}
 
           <FlatList
@@ -39,7 +39,7 @@ export const DeviceScannerModal: React.FC<DeviceScannerModalProps> = ({
             keyExtractor={(item) => item.id}
             style={{ width: '100%' }}
             renderItem={({ item }) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.deviceItem}
                 onPress={() => onSelectDevice(item)}
               >
@@ -53,7 +53,7 @@ export const DeviceScannerModal: React.FC<DeviceScannerModalProps> = ({
               </TouchableOpacity>
             )}
             ListEmptyComponent={
-              <Text style={{textAlign:'center', fontStyle:'italic', marginTop:10}}>Recherche en cours...</Text>
+              <Text style={{ textAlign: 'center', fontStyle: 'italic', marginTop: 10 }}>Recherche en cours...</Text>
             }
           />
 

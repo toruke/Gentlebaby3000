@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Timestamp } from 'firebase/firestore'; // <--- AJOUT IMPORTANT
+import { Timestamp } from 'firebase/firestore'; // 1. Import nécessaire pour le typage
 
 import { Child } from '@/src/models/child';
+
 import defaultAvatarGirl from '@/assets/images/default-avatar-girl.png';
 import defaultAvatar from '@/assets/images/default-avatar.png';
 
@@ -18,13 +19,18 @@ export default function ChildrenTab({ childrenData, familyId }: ChildrenTabProps
   const safeChildren = childrenData || [];
   const hasChildren = safeChildren.length > 0;
 
-  // CORRECTION : On type explicitement birthday
+  // 2. Correction du typage 'any' pour birthday
   const getAge = (birthday: Date | Timestamp | undefined) => {
     if (!birthday) return '';
     
-    // Vérification du type : est-ce un Timestamp Firebase ou une Date JS ?
-    const birthDate = (birthday as Timestamp).toDate ? (birthday as Timestamp).toDate() : new Date(birthday as Date);
-    
+    // Vérification sécurisée du type
+    let birthDate: Date;
+    if (birthday instanceof Timestamp) {
+      birthDate = birthday.toDate();
+    } else {
+      birthDate = new Date(birthday as Date);
+    }
+
     const ageDifMs = Date.now() - birthDate.getTime();
     const ageDate = new Date(ageDifMs); 
     return Math.abs(ageDate.getUTCFullYear() - 1970) + ' ans';
@@ -37,8 +43,8 @@ export default function ChildrenTab({ childrenData, familyId }: ChildrenTabProps
   };
 
   const handleGoToProfile = (child: Child) => {
+    // 3. Utilisation de child.childId (défini dans ton modèle) au lieu de (child as any).id
     router.push({
-      // CORRECTION : On utilise child.childId défini dans ton modèle
       pathname: `/family/${familyId}/child/${child.childId}`,
     });
   };
@@ -65,7 +71,7 @@ export default function ChildrenTab({ childrenData, familyId }: ChildrenTabProps
 
       <FlatList
         data={safeChildren}
-        // CORRECTION : Plus de 'any', on utilise les propriétés du modèle Child
+        // 4. Correction keyExtractor sans 'any'
         keyExtractor={(item) => item.childId || Math.random().toString()}
         scrollEnabled={false}
         renderItem={({ item }) => {
@@ -103,11 +109,17 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', marginTop: 40, padding: 20 },
   emptyTitle: { fontSize: 20, fontWeight: 'bold', color: '#2d3748', marginBottom: 8 },
   emptySubtitle: { fontSize: 15, color: '#718096', textAlign: 'center', marginBottom: 24 },
-  mainActionButton: { backgroundColor: '#6b46c1', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 30, elevation: 3 },
+  mainActionButton: {
+    backgroundColor: '#6b46c1', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 30, elevation: 3,
+  },
   mainActionText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   secondaryActionButton: { alignSelf: 'flex-end', marginBottom: 10, padding: 8 },
   secondaryActionText: { color: '#6b46c1', fontWeight: '600' },
-  cardItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
+  cardItem: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
+    padding: 16, borderRadius: 16, marginBottom: 12, elevation: 2,
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, shadowOffset: { width: 0, height: 2 },
+  },
   itemImage: { width: 50, height: 50, borderRadius: 25, marginRight: 16 },
   itemInfo: { flex: 1 },
   itemName: { fontSize: 16, fontWeight: 'bold', color: '#2d3748' },

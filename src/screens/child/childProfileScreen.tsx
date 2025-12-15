@@ -1,11 +1,12 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,8 +15,6 @@ import {
 } from 'react-native';
 
 import { db } from '../../../config/firebaseConfig';
-import BackgroundShapes from '../../../src/components/backgroundShapes';
-
 import defaultAvatarGirl from '../../../assets/images/default-avatar-girl.png';
 import defaultAvatar from '../../../assets/images/default-avatar.png';
 
@@ -31,14 +30,13 @@ interface Child {
 }
 
 export default function ChildProfileScreen() {
+  const router = useRouter();
   const { childId, id: familyId } = useLocalSearchParams();
 
   const [child, setChild] = useState<Child | null>(null);
   const [familyName, setFamilyName] = useState('');
   const [tutorName, setTutorName] = useState('');
   const [loading, setLoading] = useState(true);
-
-  // Photo locale (non sauvegardée)
   const [localPhoto, setLocalPhoto] = useState<string | null>(null);
 
   // Charger enfant
@@ -64,12 +62,10 @@ export default function ChildProfileScreen() {
           : Object.values(data?.babies || {});
 
         const found = babiesArray.find((b: Child) => b.id === childId);
-
         if (!found) {
           Alert.alert('Erreur', 'Enfant introuvable.');
           return;
         }
-
         setChild(found);
       } catch {
         Alert.alert('Erreur', 'Impossible de charger le profil.');
@@ -80,18 +76,15 @@ export default function ChildProfileScreen() {
     loadChild();
   }, [childId, familyId]);
 
-  // Choisir une photo locale
   const pickLocalPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       return Alert.alert('Autorisation refusée', 'Veuillez autoriser l\'accès aux photos.');
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
     });
-
     if (!result.canceled) {
       setLocalPhoto(result.assets[0].uri);
     }
@@ -99,212 +92,210 @@ export default function ChildProfileScreen() {
 
   if (loading || !child) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator testID="loading-spinner" size="large" color="#8E59FF" />
+      <View style={[styles.overlayContainer, { justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color="#fff" />
       </View>
     );
   }
 
   const avatarSource = localPhoto
     ? { uri: localPhoto }
-    : child.gender === 'female'
-      ? defaultAvatarGirl
-      : defaultAvatar;
+    : child.gender === 'female' ? defaultAvatarGirl : defaultAvatar;
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.bgWrapper}>
-        <BackgroundShapes />
-      </View>
+    <View style={styles.overlayContainer}>
+      {/* 1. Zone cliquable pour fermer */}
+      <Pressable style={styles.backdrop} onPress={() => router.back()} />
 
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 150 }}>
-        <View style={styles.card}>
-          {/* Image */}
-          <Image source={avatarSource} style={styles.photo} />
+      {/* 2. La carte Modale */}
+      <View style={styles.modalContent}>
+        
+        {/* Croix de fermeture */}
+        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+          <Text style={styles.closeIcon}>✕</Text>
+        </TouchableOpacity>
 
-          {/* Bouton changer photo */}
-          <TouchableOpacity style={styles.changePhotoBtn} onPress={pickLocalPhoto}>
-            <Text style={styles.changePhotoText}>Changer la photo</Text>
-          </TouchableOpacity>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+          
+          {/* Avatar centré */}
+          <View style={styles.avatarContainer}>
+            <Image source={avatarSource} style={styles.photo} />
+            <TouchableOpacity style={styles.changePhotoBadge} onPress={pickLocalPhoto}>
+              <Text style={styles.changePhotoIcon}>📷</Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.name}>
             {child.firstName} {child.lastName}
           </Text>
+          <Text style={styles.subHeader}>Profil Enfant</Text>
 
-          {/* Nom de famille */}
-          <View style={styles.row}>
-            <Text style={styles.label}>Nom de famille</Text>
-            <Text style={styles.value}>{familyName}</Text>
-          </View>
+          {/* Section Infos */}
+          <View style={styles.infoSection}>
+            <View style={styles.row}>
+              <Text style={styles.label}>Famille</Text>
+              <Text style={styles.value}>{familyName}</Text>
+            </View>
 
-          {/* Tuteur principal */}
-          <View style={styles.row}>
-            <Text style={styles.label}>Tuteur principal</Text>
-            <Text style={styles.value}>{tutorName}</Text>
-          </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Tuteur</Text>
+              <Text style={styles.value}>{tutorName}</Text>
+            </View>
 
-          {/* Date de naissance */}
-          <View style={styles.row}>
-            <Text style={styles.label}>Date de naissance</Text>
-            <Text style={styles.value}>
-              {child.birthDate?.toDate().toLocaleDateString()}
-            </Text>
-          </View>
-
-          {/* Babyphone (aligné) */}
-          <View style={styles.rowBabyphone}>
-            <Text style={styles.label}>Babyphone</Text>
-
-            <View style={styles.babyphoneRight}>
-              <Text
-                style={
-                  child.deviceId
-                    ? styles.babyphoneTextActive
-                    : styles.babyphoneTextInactive
-                }
-              >
-                {child.deviceId
-                  ? `Babyphone #${child.deviceId}`
-                  : 'Aucun babyphone associé'}
+            <View style={styles.row}>
+              <Text style={styles.label}>Naissance</Text>
+              <Text style={styles.value}>
+                {child.birthDate?.toDate().toLocaleDateString()}
               </Text>
+            </View>
 
+            {/* Babyphone */}
+            <View style={[styles.row, { borderBottomWidth: 0 }]}>
+              <View>
+                <Text style={styles.label}>Babyphone</Text>
+                <Text style={child.deviceId ? styles.deviceActive : styles.deviceInactive}>
+                  {child.deviceId ? `#${child.deviceId}` : 'Non associé'}
+                </Text>
+              </View>
+               
               <TouchableOpacity
                 style={styles.addDeviceBtn}
-                onPress={() =>
-                  Alert.alert(
-                    'Bientôt disponible ',
-                    'Vous pourrez associer un babyphone dans une prochaine version.',
-                  )
-                }
+                onPress={() => Alert.alert('Info', 'Bientôt disponible')}
               >
-                <Text style={styles.addDeviceText}>+ Ajouter</Text>
+                <Text style={styles.addDeviceText}>
+                  {child.deviceId ? 'Gérer' : 'Associer'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </ScrollView>
+
+        </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bgWrapper: {
-    position: 'absolute',
-    top: -140,
-    left: 0,
-    right: 0,
-    height: 380,
-    zIndex: -1,
-  },
-  container: {
-    flex: 1,
-    paddingTop: 100,
-    paddingHorizontal: 14,
-  },
-  center: {
+  // Fond sombre transparent
+  overlayContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', 
+    padding: 20,
   },
-  card: {
-    marginTop: 40,
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
+  // Carte
+  modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 22,
-    padding: 25,
-    paddingBottom: 100,
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 24,
+    padding: 24,
+    paddingTop: 40, // Espace pour l'avatar qui dépasse un peu si on veut (optionnel) ou juste aéré
+    zIndex: 1,
     shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    zIndex: 10,
+    padding: 5,
+  },
+  closeIcon: {
+    fontSize: 20,
+    color: '#CBD5E0',
+  },
+  // Avatar
+  avatarContainer: {
+    alignSelf: 'center',
+    marginBottom: 15,
   },
   photo: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignSelf: 'center',
-    marginBottom: 10,
-    borderWidth: 3,
-    borderColor: '#E8D9FF',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
+    borderColor: '#E9D8FD',
   },
-  changePhotoBtn: {
-    alignSelf: 'center',
-    backgroundColor: '#F2E9FF',
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 20,
-    marginBottom: 20,
-    marginTop: 5,
+  changePhotoBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#6b46c1',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
-  changePhotoText: {
-    color: '#8E59FF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
+  changePhotoIcon: { fontSize: 12 },
+  
+  // Textes
   name: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
+    color: '#2D3748',
+  },
+  subHeader: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#A0AEC0',
+    marginBottom: 25,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 
-  /* ROW CLASSIQUE */
+  // Infos
+  infoSection: {
+    backgroundColor: '#F7FAFC',
+    borderRadius: 16,
+    padding: 15,
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-
-  /* ROW BABYPHONE (alignée) */
-  rowBabyphone: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#EDF2F7',
   },
-
-  babyphoneRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  label: {
+    fontSize: 14,
+    color: '#718096',
   },
-
-  babyphoneTextInactive: {
-    color: '#999',
-    marginRight: 10,
+  value: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#2D3748',
   },
-
-  babyphoneTextActive: {
-    color: '#4A7FFF',
-    marginRight: 10,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
+  
+  // Device specific
+  deviceActive: { color: '#48BB78', fontWeight: 'bold', fontSize: 13, marginTop: 2 },
+  deviceInactive: { color: '#A0AEC0', fontStyle: 'italic', fontSize: 13, marginTop: 2 },
+  
   addDeviceBtn: {
-    backgroundColor: '#F2E9FF',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
   },
   addDeviceText: {
-    color: '#8E59FF',
+    fontSize: 12,
+    color: '#6b46c1',
     fontWeight: '600',
-    fontSize: 13,
-  },
-
-  label: {
-    color: '#666',
-    fontSize: 14,
-  },
-  value: {
-    fontWeight: '600',
-    maxWidth: 190,
-    textAlign: 'right',
-    fontSize: 14,
   },
 });
