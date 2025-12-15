@@ -17,9 +17,9 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 // Initialize Firebase
-// CORRECTION : Auth avec persistence
 
 export const app = initializeApp(firebaseConfig);
+
 export const db = getFirestore(app);
 export const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),

@@ -89,8 +89,7 @@ module.exports = defineConfig([
     files: ['**/*.{js,jsx,ts,tsx}'],
     rules: {
       // Bonnes pratiques générales
-      'no-console': 'warn',
-      'no-unused-vars': 'warn',
+      // 'no-unused-vars': 'warn', // <--- SUPPRIMEZ CETTE LIGNE ICI
       'prefer-const': 'error',
       'no-var': 'error',
 
@@ -111,6 +110,28 @@ module.exports = defineConfig([
       'react/no-direct-mutation-state': 'error',
       'react/no-unknown-property': 'error',
       'react/require-render-return': 'error',
+    },
+  },
+
+  // Règle spécifique pour JAVASCRIPT
+  {
+    files: ['**/*.{js,jsx}'],
+    rules: {
+      'no-unused-vars': 'warn',
+    },
+  },
+
+  // Règle spécifique pour TYPESCRIPT
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'no-unused-vars': 'off',
+      // On active la règle TS qui comprend les interfaces et ignore les variables commençant par _
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }],
     },
   },
 

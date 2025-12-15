@@ -14,3 +14,10 @@ export type Membership = {
     status: string;
     createdAt: Date;
 };
+
+export type UserFamily = {
+    userId: string;
+    familyId: string;  
+    role: string;
+    createdAt: Date;
+}

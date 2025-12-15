@@ -1,6 +1,5 @@
-/* eslint-disable no-console */
 import { router } from 'expo-router';
-import { fetchSignInMethodsForEmail, updateProfile } from 'firebase/auth';
+import { fetchSignInMethodsForEmail, sendEmailVerification, updateProfile } from 'firebase/auth';
 import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
@@ -35,30 +34,38 @@ export function useSignUp() {
 
     try {
       setLoading(true);
-      console.log('[signup] start');
 
+      // --- 1. Vérification de l'email ---
       try {
         const methods = await fetchSignInMethodsForEmail(auth, e);
-        console.log('[signup] precheck methods:', methods);
         if (methods.length > 0) {
           notify('Email déjà utilisé', 'Un compte existe déjà avec cet email. Essayez de vous connecter.');
-          console.log('[signup] blocked: email taken');
           return;
         }
-      } catch (preErr) {
-        console.log('[signup] precheck error (ignored, continue with signUp):', preErr);
+      } catch (_preErr) {
+        // On loggue l'erreur pour savoir s'il y a un souci réseau, mais on ne bloque pas
+        console.warn('Erreur pré-vérification email (non bloquant) :', _preErr);
       }
 
+      // --- 2. Création du compte (Auth) ---
       const user = await signUp(e, password);
-      console.log('[signup] auth ok:', user.uid);
 
+      // --- 3. Envoi email vérification ---
+      try {
+        await sendEmailVerification(user);
+        alert('Un email de vérification a été envoyé à votre adresse.');
+      } catch (_verifErr) {
+        console.warn('Erreur envoi email vérification :', _verifErr);
+      }
+
+      // --- 4. Mise à jour du profil Auth ---
       try {
         await updateProfile(user, { displayName: `${firstName.trim()} ${lastName.trim()}` });
-        console.log('[signup] updateProfile ok');
-      } catch (upErr) {
-        console.log('[signup] updateProfile error:', upErr);
+      } catch (_upErr) {
+        console.warn('Erreur mise à jour profil Auth :', _upErr);
       }
 
+      // --- 5. Création user dans Firestore (DB) ---
       try {
         await upsertUser({
           userId: user.uid,
@@ -66,9 +73,9 @@ export function useSignUp() {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
         });
-        console.log('[signup] upsertUser ok');
       } catch (writeErr) {
-        console.log('[signup] upsertUser error (non bloquant):', writeErr);
+        // Ici c'est important : si ça échoue, l'user est inscrit mais pas en base de données
+        console.error('CRITIQUE: Erreur écriture Firestore :', writeErr);
       }
 
       const fullName =
@@ -112,9 +119,7 @@ export function useSignUp() {
 
   return {
     firstName, lastName, email, password, confirm, loading,
-
     setFirstName, setLastName, setEmail, setPassword, setConfirm,
-
     onSubmit,
   };
 }
