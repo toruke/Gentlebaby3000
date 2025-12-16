@@ -1,14 +1,17 @@
-// src/screens/family/task/createTaskScreen.tsx (ou index.tsx selon ta route)
-import React from 'react';
-import { 
-  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform, ActivityIndicator, 
-} from 'react-native';
+// src/screens/task/createTaskScreen.tsx
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
 
 // Imports personnalisés
-import { useCreateTask } from '../../hooks/useCreateTask'; // CHEMIN À VÉRIFIER
-import { MemberSelector } from '../../components/task/memberSelector'; // CHEMIN À VÉRIFIER
+import { MemberSelector } from '../../components/task/memberSelector';
+import { useCreateTask } from '../../hooks/useCreateTask';
+
 
 export default function CreateTaskScreen() {
   const router = useRouter();
@@ -66,7 +69,7 @@ export default function CreateTaskScreen() {
 
       {/* 3. MEMBRES (Composant séparé) */}
       <Text style={styles.label}>Tuteurs responsables :</Text>
-      <MemberSelector 
+      <MemberSelector
         members={availableTutors}
         selectedIds={responsibleMembers}
         onToggle={toggleMember}
@@ -186,7 +189,7 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 10, borderRadius: 8, fontSize: 16 },
   inputError: { borderColor: '#dc3545' },
   textArea: { height: 100, textAlignVertical: 'top' },
-  
+
   iconContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 15 },
   iconButton: { alignItems: 'center', padding: 10, margin: 5, borderRadius: 8, borderWidth: 2, borderColor: '#e0e0e0', backgroundColor: '#f8f8f8', width: '28%' },
   iconButtonSelected: { borderColor: '#007bff', backgroundColor: '#e3f2fd' },
@@ -197,19 +200,19 @@ const styles = StyleSheet.create({
   radioGroup: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 },
   radio: { padding: 12, backgroundColor: '#f0f0f0', borderRadius: 8, fontSize: 14 },
   selectedRadio: { padding: 12, backgroundColor: '#007bff', color: '#fff', borderRadius: 8, fontSize: 14, fontWeight: '600' },
-  
+
   dateButton: { backgroundColor: '#f8f9fa', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#ccc', marginBottom: 10 },
   dateButtonText: { fontSize: 16, color: '#333' },
-  
+
   evaluationContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
   evaluationButton: { flex: 1, padding: 12, marginHorizontal: 3, backgroundColor: '#f0f0f0', borderRadius: 8, alignItems: 'center', borderWidth: 2, borderColor: '#f0f0f0' },
   evaluationButtonSelected: { backgroundColor: '#fff3cd', borderColor: '#ffc107' },
   evaluationText: { fontSize: 16, fontWeight: '600', color: '#666' },
   evaluationTextSelected: { color: '#856404' },
-  
+
   errorText: { color: '#dc3545', fontSize: 12, marginTop: -8, marginBottom: 10, marginLeft: 5 },
   helpText: { fontSize: 12, color: '#6c757d', marginTop: -5, marginBottom: 10, fontStyle: 'italic' },
-  
+
   createButton: { backgroundColor: '#28a745', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 20, marginBottom: 30 },
   createButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
