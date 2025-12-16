@@ -5,10 +5,25 @@ const reactPlugin = require('eslint-plugin-react');
 const reactHooksPlugin = require('eslint-plugin-react-hooks');
 
 module.exports = defineConfig([
-  // Configuration JavaScript de base
+  // 1. GLOBAL IGNORES (Toujours mettre en premier)
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/.expo/**',      // Ignore les fichiers générés par Expo
+      '**/android/**',    // Ignore le dossier natif Android
+      '**/ios/**',        // Ignore le dossier natif iOS
+      '**/web-build/**',
+      '**/*.config.js',
+    ],
+  },
+
+  // 2. Configuration JavaScript de base
   js.configs.recommended,
 
-  // Configuration pour les fichiers de configuration
+  // 3. Configuration pour les fichiers de configuration
   {
     files: ['**/config/**', '**/*.config.js'],
     languageOptions: {
@@ -21,7 +36,7 @@ module.exports = defineConfig([
     },
   },
 
-  // Configuration pour React
+  // 4. Configuration pour React
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
@@ -45,7 +60,7 @@ module.exports = defineConfig([
     },
   },
 
-  // Configuration pour React Hooks
+  // 5. Configuration pour React Hooks
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
@@ -57,7 +72,7 @@ module.exports = defineConfig([
     },
   },
 
-  // Configuration TypeScript 
+  // 6. Configuration TypeScript (Chargement dynamique)
   ...(function () {
     try {
       const tseslint = require('@typescript-eslint/eslint-plugin');
@@ -84,12 +99,10 @@ module.exports = defineConfig([
     }
   })(),
 
-  // Règles personnalisées pour tout le projet
+  // 7. Règles personnalisées pour tout le projet
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     rules: {
-      // Bonnes pratiques générales
-      // 'no-unused-vars': 'warn', // <--- SUPPRIMEZ CETTE LIGNE ICI
       'prefer-const': 'error',
       'no-var': 'error',
 
@@ -113,7 +126,7 @@ module.exports = defineConfig([
     },
   },
 
-  // Règle spécifique pour JAVASCRIPT
+  // 8. Règle spécifique pour JAVASCRIPT
   {
     files: ['**/*.{js,jsx}'],
     rules: {
@@ -121,31 +134,18 @@ module.exports = defineConfig([
     },
   },
 
-  // Règle spécifique pour TYPESCRIPT
+  // 9. Règle spécifique pour TYPESCRIPT (Avec support du préfixe _)
   {
     files: ['**/*.{ts,tsx}'],
     rules: {
+      // On désactive la règle de base JS
       'no-unused-vars': 'off',
-      // On active la règle TS qui comprend les interfaces et ignore les variables commençant par _
+      // On active la règle TS avancée
       '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
       }],
     },
-  },
-
-  // Fichiers à ignorer
-  {
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      '.expo/**',
-      'expo-plugins/**',
-      '*.config.js',
-      'web-build/**',
-    ],
   },
 ]);

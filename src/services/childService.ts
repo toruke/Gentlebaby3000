@@ -1,64 +1,56 @@
-import {
-  arrayUnion,
-  collection,
-  doc,
-  serverTimestamp,
-  writeBatch,
-} from 'firebase/firestore';
-import { auth, db } from '../../config/firebaseConfig';
-import { CreateChildRequest } from '../models/child';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/config/firebaseConfig';
 
-/**
- * Ajoute un enfant à une famille existante
- * Utilise un Batch pour garantir la cohérence des données
- */
-export async function addChildToFamily(familyId: string, childData: CreateChildRequest) {
-  const user = auth.currentUser;
-  if (!user) throw new Error('Utilisateur non connecté');
-  if (!familyId) throw new Error('ID de famille manquant');
+// Interface pour la création (sans ID)
+interface NewChildData {
+  firstName: string;
+  lastName: string;
+  birthDate: Date;
+  gender: 'male' | 'female';
+  photoUri?: string;
+  device?: string | null;
+}
 
-  const batch = writeBatch(db);
+export async function addChildProfile(familyId: string, childData: NewChildData) {
+  try {
+    let photoUrl = '';
 
-  // 1. 👶 Référence pour le nouveau document Enfant (dans la sous-collection)
-  // Chemin : family/{familyId}/children/{childId}
-  const childRef = doc(collection(db, 'family', familyId, 'children'));
+    // 1. Upload de la photo si présente
+    if (childData.photoUri) {
+      const response = await fetch(childData.photoUri);
+      const blob = await response.blob();
+      const storageRef = ref(storage, `children/${familyId}/${Date.now()}_${childData.firstName}.jpg`);
+      await uploadBytes(storageRef, blob);
+      photoUrl = await getDownloadURL(storageRef);
+    }
 
-  // 2. 🏠 Référence du document Famille (pour mettre à jour le tableau résumé)
-  const familyRef = doc(db, 'family', familyId);
+    // 2. Préparation des données pour la SOUS-COLLECTION
+    // Note: On utilise 'birthDate' (compatible Date/Timestamp) et 'device' (singulier)
+    const newChild = {
+      firstName: childData.firstName,
+      lastName: childData.lastName,
+      birthDate: childData.birthDate, // Firestore convertira auto en Timestamp
+      gender: childData.gender,
+      photoUrl: photoUrl,
+      createdAt: serverTimestamp(),
+      device: null, // Initialisé à null
+      // Plus besoin de champs legacy 'birthday' ou 'devices' ici
+    };
 
-  // Préparation des données de l'enfant
-  const newChild = {
-    id: childRef.id,
-    familyId: familyId,
-    createdBy: user.uid,
-    createdAt: serverTimestamp(),
-    ...childData, // firstName, lastName, gender, birthday
-    photoUrl: null, // On gérera l'upload plus tard si besoin
-  };
+    // 3. Ajout dans la sous-collection 'children' UNIQUEMENT
+    const childrenRef = collection(db, 'family', familyId, 'children');
+    const docRef = await addDoc(childrenRef, newChild);
 
-  // Préparation du résumé pour le document parent (Family)
-  // Cela permet d'afficher la liste des enfants sans charger toute la sous-collection
-  const childSummary = {
-    id: childRef.id,
-    firstName: childData.firstName,
-    lastName: childData.lastName,
-    birthDate: childData.birthday, // Important pour le calcul d'âge rapide
-    gender: childData.gender,
-    photoUrl: null,
-  };
+    console.log('✅ Enfant ajouté dans la sous-collection avec ID:', docRef.id);
+    
+    // 🚫 SUPPRESSION DE L'ÉTAPE : updateDoc(familyRef, { babies: arrayUnion(...) })
+    // On ne touche plus au document parent.
 
-  // 🚀 Ajout des opérations au batch
+    return docRef.id;
 
-  // A. Création du document complet dans la sous-collection
-  batch.set(childRef, newChild);
-
-  // B. Mise à jour du tableau 'babies' dans le document parent
-  batch.update(familyRef, {
-    babies: arrayUnion(childSummary),
-  });
-
-  // Exécution atomique
-  await batch.commit();
-
-  return childRef.id;
+  } catch (error) {
+    console.error('Erreur lors de l\'ajout de l\'enfant:', error);
+    throw error;
+  }
 }

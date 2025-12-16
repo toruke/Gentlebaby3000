@@ -1,12 +1,17 @@
+import { Timestamp, FieldValue } from 'firebase/firestore';
+
+// Structure stockée dans Firestore
 export type Device = {
-    serialNumber: string;
-    type: string;
-    status: string;
-    pairedAt: Date;
-    lastSeen: Date;
+  serialNumber: string; // Adresse MAC
+  type: 'EMITTER' | 'RECEIVER';
+  status: 'online' | 'offline' | 'pairing';
+  pairedAt: Timestamp | FieldValue;
+  lastSeen: Timestamp | FieldValue;
 };
 
-export type DeviceAssignment = {
-    serialNumber: string;
-    assignedAt: Date;
+// Structure utilisée localement par le scanner UDP
+export type DiscoveredDevice = {
+  id: string;   // MAC Address
+  type: string; // EMITTER ou RECEIVER
+  ip: string;
 };

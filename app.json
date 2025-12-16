@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "L'application utilise le Bluetooth pour configurer le Babyphone.",
+        "NSBluetoothPeripheralUsageDescription": "L'application utilise le Bluetooth pour trouver le Babyphone.",
+        "NSLocalNetworkUsageDescription": "L'application a besoin d'accéder au réseau local pour communiquer avec le serveur audio."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +25,22 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.GentleBaby3000"
+      "package": "com.anonymous.GentleBaby3000",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.NEARBY_WIFI_DEVICES",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -40,7 +60,26 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "@config-plugins/react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": [
+            "central"
+          ],
+          "bluetoothAlwaysPermission": "Allow the app to configure the Babyphone",
+          "bluetoothPeripheralPermission": "Allow the app to find the Babyphone"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
