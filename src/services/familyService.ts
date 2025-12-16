@@ -138,12 +138,17 @@ export async function linkDeviceToMember(
     }
   }
 
+  // 2. Mettre à jour le profil avec le device
+  batch.update(targetRef, {
+    device: device.serialNumber,
+  });
+
   await batch.commit();
   console.log(`✅ Device ${device.serialNumber} associé à ${targetId}`);
 }
 
 /**
- * Dissocie un appareil
+ * Dissocie un appareil d'un membre OU d'un enfant
  */
 export async function unlinkDeviceFromMember(familyId: string, targetId: string) {
   if (!familyId || !targetId) throw new Error('ID manquants');

@@ -1,22 +1,37 @@
-// --- BABYPHONE ÉMETTEUR : TEST CONNECTIVITÉ (VERSION ROBUSTE - FIX COMPILATION) ---
-// Objectif : Valider le flux BLE -> WiFi sans erreur de librairie.
+// --- BABYPHONE ÉMETTEUR : SESSION TCP + CONFIG BLE ROBUSTE ---
+// 1. Démarre, tente de se connecter au WiFi (via EEPROM).
+// 2. Si échec -> Mode Config BLE.
+// 3. Si succès -> Se connecte au SERVEUR PC (TCP) et stream le micro.
 
 #include <WiFi.h>
-#include <WiFiUdp.h>
+#include <WiFiClient.h> // Pour le TCP
 #include <EEPROM.h>
 #include <BTstackLib.h>
 #include <SPI.h>
+#include <hardware/adc.h> // Pour le micro du Pico W
 
 // ==========================================
 // 1. CONFIGURATION
 // ==========================================
 
+// ⚠️⚠️ À MODIFIER AVEC L'IP DE VOTRE PC (SERVEUR PYTHON) ⚠️⚠️
+const char* SERVER_IP = "192.168.129.45"; 
+const int SERVER_PORT = 5000;
+
+// Config Micro
+const int micPin = 26; 
+const int sampleRate = 8000; 
+const int bufferSize = 256; // Doit correspondre au serveur (taille des paquets)
+uint16_t audioBuffer[bufferSize];
+
+// Config BLE
 #define APP_SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define APP_CONFIG_UUID  "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 #define APP_SCAN_UUID    "86d38e23-747e-461b-94c6-4e5f726715d2"
 
 #define LED_PIN LED_BUILTIN
 
+// Structures & Variables Globales
 struct WifiCredentials {
   char ssid[32];
   char password[64];
@@ -26,12 +41,11 @@ struct WifiCredentials {
 bool isInConfigMode = false;
 String cachedWifiList = ""; 
 String bleBuffer = "";
-WiFiUDP UdpDiscovery;
-const int DISCOVERY_PORT = 12345;
-unsigned long lastDiscoveryTime = 0;
+WiFiClient tcpClient; // Client TCP pour envoyer l'audio
+unsigned long lastSampleTime = 0;
 
 // ==========================================
-// 2. GESTION WIFI & BLE
+// 2. GESTION WIFI & BLE (Votre code Robuste)
 // ==========================================
 
 void setupWifi() {
@@ -41,16 +55,14 @@ void setupWifi() {
 
   pinMode(LED_PIN, OUTPUT);
   
-  // 🟢 AJOUT CRITIQUE : On attend que tu ouvres le moniteur
+  // Attente moniteur série
   digitalWrite(LED_BUILTIN, HIGH); 
-  while (!Serial) {
-    delay(100); 
-  }
+  while (!Serial) { delay(100); }
   digitalWrite(LED_BUILTIN, LOW); 
   delay(500);
 
   Serial.println("\n\n--------------------------------");
-  Serial.println("--- DÉMARRAGE TEST ÉMETTEUR ---");
+  Serial.println("--- DÉMARRAGE ÉMETTEUR (TCP) ---");
   Serial.println("--------------------------------");
   Serial.print("MAC Address: "); Serial.println(WiFi.macAddress());
 
@@ -80,7 +92,7 @@ void setupWifi() {
      
      if (WiFi.status() == WL_CONNECTED) connectionSuccess = true;
   } else {
-     Serial.println(">> Aucune config valide en mémoire (EEPROM vide ou effacée).");
+     Serial.println(">> Aucune config valide en mémoire.");
   }
 
   if (connectionSuccess) {
@@ -88,13 +100,12 @@ void setupWifi() {
     Serial.print("IP: "); Serial.println(WiFi.localIP());
     digitalWrite(LED_PIN, LOW); 
     isInConfigMode = false;
-    UdpDiscovery.begin(DISCOVERY_PORT);
   } else {
-    Serial.println("\n\n--- ECHEC WIFI OU PAS DE CONFIG -> MODE BLE ---");
+    Serial.println("\n\n--- ECHEC WIFI -> MODE BLE ---");
     digitalWrite(LED_PIN, HIGH); // LED Fixe = Mode BLE
     isInConfigMode = true;
     
-    Serial.println("Lancement du Scan WiFi pour le BLE...");
+    Serial.println("Scan WiFi...");
     int n = WiFi.scanNetworks();
     cachedWifiList = "";
     int max = (n > 10) ? 10 : n;
@@ -104,7 +115,7 @@ void setupWifi() {
            if (i < max - 1) cachedWifiList += "|";
        }
     }
-    Serial.println(">> Liste WiFi prête. Publicité BLE démarrée.");
+    Serial.println(">> Publicité BLE démarrée.");
   }
 }
 
@@ -115,20 +126,13 @@ int appWriteCallback(uint16_t value_handle, uint8_t *buffer, uint16_t size) {
     for (int i=0; i<size; i++) bleBuffer += (char)buffer[i];
     
     if (bleBuffer.indexOf('\n') > 0) {
-       Serial.print("Reçu BLE brut: "); Serial.println(bleBuffer);
        bleBuffer.trim();
 
        if (bleBuffer == "ERASE") {
-           Serial.println("Commande ERASE reçue !");
+           Serial.println("Commande ERASE !");
            WifiCredentials empty; 
            empty.configured = false;
-           memset(empty.ssid, 0, 32);
-           memset(empty.password, 0, 64);
-           
-           EEPROM.put(0, empty); 
-           EEPROM.commit();
-           Serial.println("EEPROM effacée. Reboot...");
-           delay(1000);
+           EEPROM.put(0, empty); EEPROM.commit();
            rp2040.reboot();
            return 0;
        }
@@ -143,8 +147,6 @@ int appWriteCallback(uint16_t value_handle, uint8_t *buffer, uint16_t size) {
           s.toCharArray(newCreds.ssid, 32);
           p.toCharArray(newCreds.password, 64);
           newCreds.configured = true;
-          
-          Serial.print("Sauvegarde SSID: "); Serial.println(newCreds.ssid);
           
           EEPROM.put(0, newCreds);
           if (EEPROM.commit()) {
@@ -173,14 +175,21 @@ uint16_t gattReadCallback(uint16_t value_handle, uint8_t * buffer, uint16_t buff
 }
 
 // ==========================================
-// 3. MAIN
+// 3. MAIN SETUP
 // ==========================================
 
 void setup() {
   Serial.begin(115200);
+
+  // 1. Initialisation Micro (ADC)
+  adc_init();
+  adc_gpio_init(micPin);
+  adc_select_input(0); // Le micro est sur GP26 (ADC0)
+
+  // 2. Initialisation WiFi (Votre fonction)
   setupWifi();
 
-  // Setup BLE
+  // 3. Initialisation BLE
   BTstack.setGATTCharacteristicRead(gattReadCallback);
   BTstack.setGATTCharacteristicWrite(appWriteCallback);
 
@@ -190,28 +199,61 @@ void setup() {
     BTstack.addGATTCharacteristicDynamic(new UUID(APP_SCAN_UUID), ATT_PROPERTY_READ, 0);
   }
   
-  // 🔴 LIGNE SUPPRIMÉE : BTstack.setDeviceName("BabyphoneConfig"); 
-  // La librairie n'a pas cette fonction.
-
   BTstack.setup();
   BTstack.startAdvertising();
 }
 
+// ==========================================
+// 4. MAIN LOOP (AUDIO STREAMING)
+// ==========================================
+
 void loop() {
+  // Gestion BLE permanente
   BTstack.loop();
 
-  if (!isInConfigMode) {
-      if (millis() - lastDiscoveryTime > 2000) {
-          IPAddress broadcastIp(255, 255, 255, 255);
-          UdpDiscovery.beginPacket(broadcastIp, DISCOVERY_PORT);
-          String msg = "BABYPHONE|EMITTER|" + WiFi.macAddress();
-          UdpDiscovery.print(msg);
-          UdpDiscovery.endPacket();
-          
-          lastDiscoveryTime = millis();
-          
-          Serial.print("Ping UDP envoyé à 255.255.255.255 : ");
-          Serial.println(msg);
-      }
+  // Si on est en mode configuration, on ne fait rien d'autre
+  if (isInConfigMode) {
+     return;
   }
+
+  // --- LOGIQUE SESSION / STREAMING ---
+  
+  // 1. Gestion de la connexion au serveur PC
+  if (!tcpClient.connected()) {
+    // Si on n'est pas connecté, on essaie de joindre le serveur
+    // La LED est éteinte si pas de session active
+    digitalWrite(LED_PIN, LOW); 
+    
+    // Tentative de connexion (timeout implicite)
+    if (tcpClient.connect(SERVER_IP, SERVER_PORT)) {
+      Serial.println("✅ Connecté au serveur PC ! Session active.");
+      digitalWrite(LED_PIN, HIGH); // LED allumée = Session active & Audio en cours
+    } else {
+      // Petite pause pour ne pas spammer le réseau si le serveur est éteint
+      // On continue BTstack.loop() pour garder le BLE actif si besoin, mais ici le wifi est prio
+      delay(500); 
+      return; 
+    }
+  }
+
+  // 2. Acquisition Audio (Uniquement si connecté au serveur)
+  unsigned long samplePeriod = 1000000UL / sampleRate;
+  
+  for (int i = 0; i < bufferSize; i++) {
+    unsigned long now = micros();
+    if (now >= lastSampleTime + samplePeriod) {
+       // Lecture ADC (Valeur brute 12-bits : 0-4095)
+       audioBuffer[i] = adc_read(); 
+       lastSampleTime = micros();
+    } else {
+       // Si on est en avance, on attend un tout petit peu
+       // (Boucle vide pour la précision temporelle)
+    }
+    // Sécurité pour garder le rythme
+    while(micros() < lastSampleTime + samplePeriod);
+  }
+
+  // 3. Envoi au serveur (TCP)
+  // On envoie le paquet brut. Le serveur Python s'occupe de filtrer le silence.
+  tcpClient.write((const uint8_t*)audioBuffer, bufferSize * 2);
 }

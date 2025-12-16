@@ -146,6 +146,7 @@ export default function ChildProfileScreen() {
       stopScanning();
       await linkDeviceToMember(familyId as string, child.id, {
         serialNumber: device.id,
+        
         type: device.type,
       });
       setScannerVisible(false);

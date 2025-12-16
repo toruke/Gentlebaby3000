@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "L'application utilise le Bluetooth pour configurer le Babyphone.",
-        "NSBluetoothPeripheralUsageDescription": "L'application utilise le Bluetooth pour trouver le Babyphone."
+        "NSBluetoothPeripheralUsageDescription": "L'application utilise le Bluetooth pour trouver le Babyphone.",
+        "NSLocalNetworkUsageDescription": "L'application a besoin d'accéder au réseau local pour communiquer avec le serveur audio."
       }
     },
     "android": {
@@ -33,6 +34,7 @@
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN",
+        "android.permission.NEARBY_WIFI_DEVICES",
         "android.permission.RECORD_AUDIO",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.VIBRATE",
@@ -63,9 +65,19 @@
         "@config-plugins/react-native-ble-plx",
         {
           "isBackgroundEnabled": false,
-          "modes": ["central"],
+          "modes": [
+            "central"
+          ],
           "bluetoothAlwaysPermission": "Allow the app to configure the Babyphone",
           "bluetoothPeripheralPermission": "Allow the app to find the Babyphone"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],

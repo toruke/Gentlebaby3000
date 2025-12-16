@@ -115,6 +115,29 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
     );
   };
 
+  const createSession = async (serverIp: string, receiverIp: string) => {
+    try {
+      const response = await fetch(`http://${serverIp}:8080/create_session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          receiverIp: receiverIp, // L'IP du récepteur sélectionné
+        }),
+      });
+    
+      const json = await response.json();
+      console.log('Session créée:', json);
+      Alert.alert('Session Active', 'Le babyphone écoute !');
+    
+    } catch (error) {
+      console.error('Erreur connexion serveur:', error);
+      console.log('Erreur connexion serveur:', error);
+      Alert.alert('Erreur', 'Impossible de joindre le serveur PC');
+    }
+  };
+
   return (
     <View style={styles.container}>
       
@@ -147,7 +170,11 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.btnScan} onPress={handleOpenScanner}>
-          <Text style={styles.btnScanText}>🔍 2. Associer Appareil (Déjà connecté)</Text>
+          <Text style={styles.btnScanText}>🔍 2. Associer Appareil</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.btnSess} onPress={() => createSession('192.168.129.45', '192.168.129.192')}>
+          <Text style={styles.btnSessText}>Démarrer une session</Text>
         </TouchableOpacity>
       </View>
 
@@ -194,6 +221,8 @@ const styles = StyleSheet.create({
   btnConfigText: { color: '#6b46c1', fontWeight: 'bold' },
   btnScan: { backgroundColor: '#EDF2F7', padding: 15, borderRadius: 10, alignItems:'center', borderStyle:'dashed', borderWidth:1, borderColor:'#CBD5E0' },
   btnScanText: { color: '#4A5568', fontWeight: 'bold' },
+  btnSess: { backgroundColor: '#C6F6D5', padding: 12, borderRadius: 10, alignItems:'center', marginTop:10 },
+  btnSessText: { color: 'green', fontWeight: 'bold' },
   
   title: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#2D3748' },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 10, elevation: 2 },
