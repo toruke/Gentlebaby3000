@@ -6,7 +6,7 @@ import { TimelineItem, TimelineService } from '../../services/timelineService';
 interface TimelineItemCardProps {
   item: TimelineItem;
   onPress: (task: Task) => void;
-  testCurrentTime?: Date; 
+  testCurrentTime?: Date;
 }
 
 export const TimelineItemCard: React.FC<TimelineItemCardProps> = ({
@@ -15,7 +15,7 @@ export const TimelineItemCard: React.FC<TimelineItemCardProps> = ({
   testCurrentTime, // Récupération de la prop
 }) => {
   const { task, status, isNextUpcoming, scheduledTime } = item;
-  
+
   const timeStr = TimelineService.formatTime(scheduledTime);
   const color = TimelineService.getStatusColor(status, isNextUpcoming);
 
@@ -23,11 +23,11 @@ export const TimelineItemCard: React.FC<TimelineItemCardProps> = ({
     if (!scheduledTime || isNaN(scheduledTime.getTime())) return 'Date invalide';
 
     // MODIFICATION ICI : On utilise testCurrentTime s'il existe, sinon new Date()
-    const now = testCurrentTime || new Date(); 
-    
+    const now = testCurrentTime || new Date();
+
     const diffMinutes = (scheduledTime.getTime() - now.getTime()) / (1000 * 60);
-    
-    
+
+
     if (status === 'overdue') {
       const overdueMinutes = Math.abs(Math.floor(diffMinutes));
       if (overdueMinutes > 60) {
@@ -37,19 +37,19 @@ export const TimelineItemCard: React.FC<TimelineItemCardProps> = ({
       }
       return `En retard de ${overdueMinutes} min`;
     }
-    
+
     if (status === 'current') return 'C\'est le moment !';
-    
+
     if (diffMinutes < 60) return `Dans ${Math.floor(diffMinutes)} min`;
     if (diffMinutes < 120) return `Dans 1h ${Math.floor(diffMinutes % 60)}min`;
-    
+
     if (scheduledTime.getDate() !== now.getDate()) return `Demain à ${timeStr}`;
-    
+
     return `À ${timeStr}`;
   };
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.card, { borderLeftColor: color }]}
       onPress={() => onPress(task)}
       activeOpacity={0.7}
@@ -79,10 +79,10 @@ export const TimelineItemCard: React.FC<TimelineItemCardProps> = ({
               👤 {task.assignedMembers.length} membre(s)
             </Text>
           )}
-          
+
           {status === 'overdue' && (
             <Text style={[styles.detailText, { color: '#dc3545', fontWeight: 'bold' }]}>
-               🔴 Retard important
+              🔴 Retard important
             </Text>
           )}
         </View>

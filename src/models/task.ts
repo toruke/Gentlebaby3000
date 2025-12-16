@@ -14,7 +14,7 @@ export interface Task {
   Validation: boolean;
   assignedMembers: string[];
   createdAt: Timestamp;
-  nextOccurrence?: Date;
+  nextOccurrence?: Timestamp;
   fixedTimes?: string[];
   startDateTime?: Timestamp;
   comments?: string;

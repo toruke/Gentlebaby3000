@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import {
+  Href,
   useGlobalSearchParams,
   useLocalSearchParams,
   useRouter,
@@ -15,7 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
+// CORRECTION 1 : Importer 'Href'
 import { TaskCard } from '../../components/activity/taskCard';
 import { TaskFilters } from '../../components/activity/taskFilters';
 import { useFamilyTasks } from '../../hooks/useFamilyTasks';
@@ -34,9 +35,6 @@ export default function FamilyActivityScreen({
   const localParams = useLocalSearchParams();
   const globalParams = useGlobalSearchParams();
 
-  console.log('🔍 Local params:', localParams);
-  console.log('🔍 Global params:', globalParams);
-  console.log('🔍 Prop familyId:', propFamilyId);
 
   // Essayez toutes les sources possibles dans l'ordre de priorité
   const familyId =
@@ -49,8 +47,6 @@ export default function FamilyActivityScreen({
   // Convertir en string si c'est un tableau
   const effectiveFamilyId = Array.isArray(familyId) ? familyId[0] : familyId;
 
-  console.log('✅ Family ID final:', effectiveFamilyId);
-  console.log('✅ Type:', typeof effectiveFamilyId);
 
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -79,13 +75,7 @@ export default function FamilyActivityScreen({
 
   // Debug supplémentaire
   useEffect(() => {
-    console.log('📊 État du hook:', {
-      loading,
-      tasksCount: safeTasks.length,
-      error,
-      familyId: effectiveFamilyId,
-    });
-  }, [loading, safeTasks, error, effectiveFamilyId]);
+  }, [loading, tasks, error, effectiveFamilyId]);
 
   // Si pas d'ID, montrez un écran d'erreur clair
   if (!effectiveFamilyId || effectiveFamilyId === 'undefined') {
@@ -183,11 +173,13 @@ export default function FamilyActivityScreen({
   };
 
   const handleEditTask = (taskId: string) => {
-    router.push(`/(tabs)/family/${effectiveFamilyId}/task/${taskId}/edit`);
+    // CORRECTION 2 : Ajouter 'as Href' à la fin de la chaîne
+    router.push(`/family/${effectiveFamilyId}/task/${taskId}` as Href);
   };
 
   const handleCreateTask = () => {
-    router.push(`/family/${effectiveFamilyId}/task`);
+    // CORRECTION 3 : Ajouter 'as Href' ici aussi
+    router.push(`/family/${effectiveFamilyId}/task` as Href);
   };
 
   // ✅ IMPORTANT : on envoie familyId à l’écran notifications

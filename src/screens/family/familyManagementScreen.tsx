@@ -9,7 +9,6 @@ interface FamilyManagementProps {
 }
 
 export default function FamilyManagement({ familyId }: FamilyManagementProps) {
-  console.log('FamilyManagement familyId:', familyId);
   const { family, loading, error } = useFamilyManagement(familyId);
 
   if (loading) {

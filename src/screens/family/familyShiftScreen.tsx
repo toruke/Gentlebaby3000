@@ -4,12 +4,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PlanningSlot } from '../../models/planning';
 import { getPlanningSlots } from '../../services/planning';
 import { PlanningMode, getRangeForMode } from '../../utils/planningRange';
@@ -208,9 +208,7 @@ const GuardPlanningScreen: React.FC = () => {
 
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => {
-          console.log('Naviguer vers Création Créneau');
-        }}
+        onPress={() => { }}
       >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>

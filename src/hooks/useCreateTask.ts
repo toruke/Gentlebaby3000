@@ -1,7 +1,7 @@
 // src/hooks/useCreateTask.ts
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import { collection, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
@@ -27,7 +27,7 @@ interface CreateTaskData {
   Tolerance: number;
   Validation: boolean;
   assignedMembers: string[];
-  startDateTime?: Date | Timestamp;
+  startDateTime?: Date;
   nextOccurrence?: Date;
   fixedTimes?: string[];
   comments?: string;
@@ -62,12 +62,10 @@ export const useCreateTask = (familyId: string | undefined) => {
 
       try {
         setLoading(true);
-        console.log(`🔍 Recherche des membres pour la famille : ${familyId}`);
 
         let querySnapshot = await getDocs(collection(db, 'family', familyId, 'members'));
 
         if (querySnapshot.empty) {
-          console.log('⚠️ Pas de membres, fallback sur users global...');
           querySnapshot = await getDocs(collection(db, 'users'));
         }
 
@@ -201,7 +199,7 @@ export const useCreateTask = (familyId: string | undefined) => {
 
       if (taskType === 'recurring') {
         createTaskData.Tolerance = parseInt(interval, 10);
-        createTaskData.startDateTime = Timestamp.fromDate(startDateTime);
+        createTaskData.startDateTime = startDateTime;
       }
 
       if (taskType === 'temporal') {
@@ -211,7 +209,7 @@ export const useCreateTask = (familyId: string | undefined) => {
       if (taskType === 'event') {
         createTaskData.comments = comments.trim();
         createTaskData.evaluation = evaluation;
-        createTaskData.startDateTime = Timestamp.fromDate(startDateTime);
+        createTaskData.startDateTime = startDateTime;
       }
 
       const taskId = await taskService.createTask(familyId, createTaskData);

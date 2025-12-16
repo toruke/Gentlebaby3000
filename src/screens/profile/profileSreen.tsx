@@ -18,7 +18,8 @@ export default function Profil() {
       await logout();
       router.replace('/auth/login');
     } catch (e) {
-      console.log('Erreur logout:', e);
+      // CORRECTION : On utilise la variable 'e' et on remplit le bloc vide
+      console.error('Erreur lors de la déconnexion :', e);
     }
   }
 

@@ -17,7 +17,7 @@ export const WeatherTimelineBar: React.FC<WeatherTimelineBarProps> = ({
   // ET aussi les tâches en retard ("overdue") car c'est important
   const visibleItems = timelineItems.filter(item => {
     const diffHours = (item.scheduledTime.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
-      
+
     // On garde les retards (diff négatif) et les événements futurs jusqu'à +24h
     // On retire les tâches complétées
     return (diffHours < 24) && item.status !== 'completed';
@@ -37,22 +37,22 @@ export const WeatherTimelineBar: React.FC<WeatherTimelineBarProps> = ({
         <Text style={styles.title}>Fil de la journée</Text>
         <Text style={styles.timeIndic}>{TimelineService.formatTime(currentTime)}</Text>
       </View>
-      
-      <ScrollView 
-        horizontal 
+
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {visibleItems.map((item) => {
           const color = TimelineService.getStatusColor(item.status, item.isNextUpcoming);
           const time = TimelineService.formatTime(item.scheduledTime);
-          
+
           // Calculer si c'est loin (pour l'UI, ex: opacité réduite si > 12h)
           const isFar = (item.scheduledTime.getTime() - currentTime.getTime()) > (12 * 60 * 60 * 1000);
 
           return (
-            <TouchableOpacity 
-              key={item.id} 
+            <TouchableOpacity
+              key={item.id}
               style={[styles.hourContainer, isFar && { opacity: 0.6 }]}
               onPress={() => {
                 // Astuce : on doit retrouver le vrai index ou passer l'objet directement
@@ -63,17 +63,17 @@ export const WeatherTimelineBar: React.FC<WeatherTimelineBarProps> = ({
               }}
             >
               <View style={styles.lineConnector} />
-              
+
               <View style={styles.timeBubble}>
                 <Text style={styles.timeText}>{time}</Text>
               </View>
-              
+
               <View style={[styles.iconContainer, { backgroundColor: color }]}>
                 <Text style={styles.icon}>{item.task.Icon}</Text>
                 {/* Petit point rouge si retard */}
                 {item.status === 'overdue' && <View style={styles.alertDot} />}
               </View>
-              
+
               <Text style={styles.taskName} numberOfLines={1}>
                 {item.task.Name}
               </Text>

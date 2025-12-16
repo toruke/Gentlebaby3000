@@ -5,8 +5,8 @@ import { getProfileUser, getVerificationPassword, updateProfileUser } from '../s
 import { auth } from '@/config/firebaseConfig';
 
 
-export const useEditProfile =  (onClose: () => void) => {
-  
+export const useEditProfile = (onClose: () => void) => {
+
   const [error, setError] = useState<string>('');
   const [user, setUser] = useState<User>();
   const [editFirstname, setEditFirstname] = useState<string>('');
@@ -17,17 +17,16 @@ export const useEditProfile =  (onClose: () => void) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isVerified, setIsVerified] = useState(false);
-  
-  const fetchUser = useCallback(async() => {
+
+  const fetchUser = useCallback(async () => {
     try {
       const snapUser = await getProfileUser();
       if (snapUser.empty) {
         setError('Une erreur est survenue lors de la récupération des données utilisateurs');
-        return ;
+        return;
       }
       const userDoc = snapUser.docs[0];
       const userData = userDoc.data();
-      console.log(userData);
 
       const fetchedUser: User = {
         firstName: userData.firstName,
@@ -38,27 +37,26 @@ export const useEditProfile =  (onClose: () => void) => {
       setEditLastname(fetchedUser.lastName);
       setEditMailAddress(fetchedUser.email);
       setUser(fetchedUser);
-      console.log(fetchedUser);
 
     }
-    catch(error){
-      console.error('Erreur Firebase: ' , error);
+    catch (error) {
+      console.error('Erreur Firebase: ', error);
       setError('Erreur lors de la récupération des données utilisateurs');
     }
-  },[setError, setEditFirstname, setEditLastname, setEditMailAddress, setUser]);
+  }, [setError, setEditFirstname, setEditLastname, setEditMailAddress, setUser]);
 
-  
+
   useEffect(() => {
     fetchUser();
-  },[fetchUser]);
+  }, [fetchUser]);
 
 
   const onSubmit = async () => {
-    if (!user){
+    if (!user) {
       setError('Utilisateur non chargé');
       return;
     }
-    if (!editFirstname.trim()|| !editLastname.trim()) {
+    if (!editFirstname.trim() || !editLastname.trim()) {
       setError('Vous devez remplir tous les champs');
       return;
     }
@@ -79,12 +77,12 @@ export const useEditProfile =  (onClose: () => void) => {
         return;
       }
     }
-  
+
     if (editMailAddress !== user.email && !isVerified) {
       setError('Veuillez confirmer votre mot de passe avant de modifier votre adresse email.');
       return;
     }
-    const result = await updateProfileUser(editFirstname,editLastname,editMailAddress, step === 'change' ? newPassword : undefined);
+    const result = await updateProfileUser(editFirstname, editLastname, editMailAddress, step === 'change' ? newPassword : undefined);
     if (result.includes('réussie')) {
       setError('');
       setIsVerified(false);
@@ -101,17 +99,17 @@ export const useEditProfile =  (onClose: () => void) => {
       setError('');
       alert(result);
       try {
-        await auth.signOut(); 
+        await auth.signOut();
         // L'écouteur onAuthStateChanged dans useCurrentUserProfile va rediriger vers l'écran de connexion
       } catch (e) {
         console.error('Erreur lors de la déconnexion après changement d\'email:', e);
-      } 
+      }
       onClose();
     }
     else {
       setError(result);
     }
-    
+
   };
 
   const onSubmitPassword = async () => {
@@ -126,5 +124,5 @@ export const useEditProfile =  (onClose: () => void) => {
     }
   };
 
-  return { user, onSubmit, onSubmitPassword, fetchUser, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setStep, setCurrentPassword, setNewPassword, setConfirmPassword, error, setError};
+  return { user, onSubmit, onSubmitPassword, fetchUser, editFirstname, editLastname, editMailAddress, step, currentPassword, newPassword, confirmPassword, setEditFirstname, setEditLastname, setEditMailAddress, setStep, setCurrentPassword, setNewPassword, setConfirmPassword, error, setError };
 };
