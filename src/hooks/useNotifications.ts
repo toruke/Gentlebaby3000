@@ -1,18 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Notification } from '../models/notification';
 import {
   fetchFamilyNotifications,
   markNotificationAsRead,
 } from '../services/notificationService';
 
-/**
- * Hook de gestion des notifications d'une famille
- */
 export const useNotifications = (familyId?: string) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     if (!familyId) {
       setLoading(false);
       return;
@@ -22,7 +19,7 @@ export const useNotifications = (familyId?: string) => {
     const data = await fetchFamilyNotifications(familyId);
     setNotifications(data as Notification[]);
     setLoading(false);
-  };
+  }, [familyId]);
 
   const unreadCount = notifications.filter(
     n => n.status === 'unread',
@@ -40,9 +37,8 @@ export const useNotifications = (familyId?: string) => {
   };
 
   useEffect(() => {
-    if (!familyId) return;
     loadNotifications();
-  }, [familyId]);
+  }, [loadNotifications]);
 
   return {
     notifications,

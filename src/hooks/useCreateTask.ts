@@ -213,7 +213,6 @@ export const useCreateTask = (familyId: string | undefined) => {
       }
 
       const taskId = await taskService.createTask(familyId, createTaskData);
-      console.log('✅ Tâche créée');
 
       // 🔔 NOTIFICATION : nouvelle tâche créée
       await createNotification({

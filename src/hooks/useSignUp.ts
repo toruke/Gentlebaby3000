@@ -95,7 +95,6 @@ export function useSignUp() {
         );
       }
     } catch (err: unknown) {
-      console.log('[signup] catch:', err);
       let code: string | undefined;
       let message: string | undefined;
       if (typeof err === 'object' && err !== null) {
@@ -113,7 +112,6 @@ export function useSignUp() {
       }
     } finally {
       setLoading(false);
-      console.log('[signup] end');
     }
   }
 
