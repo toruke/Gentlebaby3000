@@ -20,7 +20,7 @@ import MembersTab from '@/src/components/management/membersTab';
 
 import { useDeviceDiscovery } from '@/src/hooks/useDeviceDiscovery';
 import { DeviceScannerModal } from '@/src/components/deviceScannerModal';
-import { linkDeviceToMember, unlinkDeviceFromMember } from '@/src/services/familyService';
+import { linkDeviceToMember, unlinkDeviceFromMember} from '@/src/services/familyService';
 import { DiscoveredDevice } from '@/src/models/device';
 
 type TabType = 'members' | 'children' | 'devices';

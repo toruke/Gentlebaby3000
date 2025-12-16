@@ -1,6 +1,9 @@
+// familyService.ts (CORRIGÉ)
+
 import {
   collection,
   getDoc,
+  getDocs,
   doc,
   serverTimestamp,
   writeBatch,
@@ -23,10 +26,10 @@ export type FamilyMember = {
   role: FamilyMemberRole;
   joinedAt: Timestamp | FieldValue;
   displayName?: string;
-  device?: string | null; // 🟢 Champ unique 'device'
+  device?: string | null; // Champ unique 'device'
 };
 
-// ... (Gardez createFamily et deleteFamilyPhoto inchangés) ...
+// ... (createFamily et deleteFamilyPhoto inchangés) ...
 export async function createFamily(familyName: string, imageUri?: string) {
   const user = auth.currentUser;
   if (!user) throw new Error('Utilisateur non connecté');
@@ -79,9 +82,36 @@ export async function deleteFamilyPhoto(photoUrl: string) {
   }
 }
 
+
+/*
+Assoxcie un appareil à la famille
+*/
+export async function linkDeviceToFamily(
+  familyId: string, 
+  device: { serialNumber: string, type: string },
+) {
+
+  const batch = writeBatch(db);
+
+  // 1. Créer le document Device
+  const deviceRef = doc(db, 'family', familyId, 'devices', device.serialNumber);
+  const newDeviceData: Device = {
+    serialNumber: device.serialNumber,
+    type: device.type as 'EMITTER' | 'RECEIVER',
+    status: 'online',
+    pairedAt: serverTimestamp(),
+    lastSeen: serverTimestamp(),
+  };
+  batch.set(deviceRef, newDeviceData);
+
+  await batch.commit();
+  console.log(`✅ Device ${device.serialNumber} associé à la famille ${familyId}`);
+}
+
 /**
- * 🆕 Associe un appareil à un Membre OU un Enfant
+ * Associe un appareil à un Membre OU un Enfant
  */
+
 export async function linkDeviceToMember(
   familyId: string, 
   targetId: string, 
@@ -108,28 +138,12 @@ export async function linkDeviceToMember(
     }
   }
 
-  // 2. Créer le document Device
-  const deviceRef = doc(db, 'family', familyId, 'devices', device.serialNumber);
-  const newDeviceData: Device = {
-    serialNumber: device.serialNumber,
-    type: device.type as 'EMITTER' | 'RECEIVER',
-    status: 'online',
-    pairedAt: serverTimestamp(),
-    lastSeen: serverTimestamp(),
-  };
-  batch.set(deviceRef, newDeviceData);
-
-  // 3. Mettre à jour la cible avec le champ 'device'
-  batch.update(targetRef, {
-    device: device.serialNumber, // 🟢 On écrit dans 'device'
-  });
-
   await batch.commit();
   console.log(`✅ Device ${device.serialNumber} associé à ${targetId}`);
 }
 
 /**
- * 🗑️ Dissocie un appareil
+ * Dissocie un appareil
  */
 export async function unlinkDeviceFromMember(familyId: string, targetId: string) {
   if (!familyId || !targetId) throw new Error('ID manquants');
@@ -149,14 +163,9 @@ export async function unlinkDeviceFromMember(familyId: string, targetId: string)
   if (!docSnap.exists()) throw new Error('Utilisateur introuvable');
 
   const data = docSnap.data();
-  // 🟢 On lit 'device' (ou 'device' pour compatibilité temporaire)
   const deviceSerial = data?.device; 
 
   if (!deviceSerial) return; 
-
-  // 2. Supprimer le device
-  const deviceRef = doc(db, 'family', familyId, 'device', deviceSerial);
-  batch.delete(deviceRef);
 
   // 3. Nettoyer le profil
   batch.update(targetRef, { 
@@ -165,4 +174,48 @@ export async function unlinkDeviceFromMember(familyId: string, targetId: string)
 
   await batch.commit();
   console.log(`✅ Appareil ${deviceSerial} dissocié.`);
+
 }
+
+export async function unlinkDeviceFromFamily(familyId: string, deviceSerial: string) {
+  if (!familyId || !deviceSerial) throw new Error('ID manquants');
+  const batch = writeBatch(db);
+
+  // 1. Trouver le device
+  const deviceRef = doc(db, 'family', familyId, 'devices', deviceSerial);
+  const deviceSnap = await getDoc(deviceRef);
+  if (!deviceSnap.exists()) throw new Error('Appareil introuvable');
+
+  // 2. Supprimer el device de la collection devices
+  batch.delete(deviceRef);
+
+  // 3. Trouver le membre ou enfant associé
+  const membersRef = collection(db, 'family', familyId, 'members');
+  const childrenRef = collection(db, 'family', familyId, 'children');
+
+  const membersSnap = await getDocs(membersRef);
+
+  membersSnap.forEach((memberDoc) => {
+
+    const memberData = memberDoc.data();
+    if (memberData.device === deviceSerial) {
+      const memberRef = doc(db, 'family', familyId, 'members', memberDoc.id);
+      batch.update(memberRef, { device: null });
+
+    }
+  });
+
+  const childrenSnap = await getDocs(childrenRef);
+
+  childrenSnap.forEach((childDoc) => {
+    const childData = childDoc.data();
+    if (childData.device === deviceSerial) {
+      const childRef = doc(db, 'family', familyId, 'children', childDoc.id);
+      batch.update(childRef, { device: null });
+    }
+  });
+
+  await batch.commit();
+  console.log(`✅ Appareil ${deviceSerial} dissocié de la famille.`);
+}
+

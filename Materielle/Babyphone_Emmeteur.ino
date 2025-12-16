@@ -1,196 +1,217 @@
-// Babyphone Emetteur (Côté Bébé) + Calibration + Anti-Pic + Découverte
-// Envoie l'audio UDP, enregistre sur PC via TCP, et s'annonce sur le réseau
+// --- BABYPHONE ÉMETTEUR : TEST CONNECTIVITÉ (VERSION ROBUSTE - FIX COMPILATION) ---
+// Objectif : Valider le flux BLE -> WiFi sans erreur de librairie.
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <WiFiClient.h> 
-#include <hardware/adc.h>
+#include <EEPROM.h>
+#include <BTstackLib.h>
+#include <SPI.h>
 
-// --- Configuration Wi-Fi ---
-const char *ssid = "ssid";
-const char *password = "password";
-// ---------------------------
+// ==========================================
+// 1. CONFIGURATION
+// ==========================================
 
-// --- NOUVEAU : GESTION DÉCOUVERTE ---
-// Mettre à true si l'appareil est déjà associé (plus tard via mémoire interne)
-bool isPaired = false; 
+#define APP_SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define APP_CONFIG_UUID  "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define APP_SCAN_UUID    "86d38e23-747e-461b-94c6-4e5f726715d2"
+
+#define LED_PIN LED_BUILTIN
+
+struct WifiCredentials {
+  char ssid[32];
+  char password[64];
+  bool configured; 
+};
+
+bool isInConfigMode = false;
+String cachedWifiList = ""; 
+String bleBuffer = "";
+WiFiUDP UdpDiscovery;
 const int DISCOVERY_PORT = 12345;
 unsigned long lastDiscoveryTime = 0;
 
-// --- CONFIGURATION RÉSEAU ---
-IPAddress receiverIp(xxx,xxx,xxx,xxx); // IP Babyphone Parent
-unsigned int udpPort = 4200;
+// ==========================================
+// 2. GESTION WIFI & BLE
+// ==========================================
 
-IPAddress fileReceiverIp(xxx,xxx,xxx,xxx); // IP de votre PC
-const int fileReceiverPort = 5000;
+void setupWifi() {
+  EEPROM.begin(512);
+  WifiCredentials creds;
+  EEPROM.get(0, creds);
 
-WiFiUDP Udp;          
-WiFiClient tcpClient; 
-
-// --- Audio ---
-const int micPin = 26; 
-const int sampleRate = 8000; 
-const int bufferSize = 256; 
-uint16_t audioBuffer[bufferSize];
-unsigned long lastSampleTime = 0;
-
-// --- SEUILS VAD ---
-const float QUIET_THRESHOLD_RMS = 1050.0;  
-const float NOISE_THRESHOLD_RMS = 1200.0; 
-const float MAX_NOISE_THRESHOLD = 2000.0; 
-const long MIN_RECORDING_DURATION_MS = 2000; 
-
-// Variables d'état
-bool isRecording = false;
-unsigned long recordingStartTime = 0;
-uint32_t dataSize = 0; 
-
-// --- Structure WAV ---
-struct WavHeader {
-  char riff[4] = {'R', 'I', 'F', 'F'};
-  uint32_t chunkSize; 
-  char wave[4] = {'W', 'A', 'V', 'E'};
-  char fmt[4] = {'f', 'm', 't', ' '};
-  uint32_t subchunk1Size = 16;
-  uint16_t audioFormat = 1; 
-  uint16_t numChannels = 1; 
-  uint32_t sampleRate = 8000; 
-  uint32_t byteRate = 16000; 
-  uint16_t blockAlign = 2; 
-  uint16_t bitsPerSample = 16; 
-  char data[4] = {'d', 'a', 't', 'a'};
-  uint32_t subchunk2Size; 
-};
-
-// --- FONCTIONS ---
-
-// NOUVEAU : Fonction de publicité UDP
-void broadcastPresence() {
-  if (millis() - lastDiscoveryTime > 2000) { // Toutes les 2 secondes
-    IPAddress broadcastIp(255, 255, 255, 255);
-    WiFiUDP UdpDiscovery; // Instance temporaire pour ne pas bloquer le flux audio
-    UdpDiscovery.beginPacket(broadcastIp, DISCOVERY_PORT);
-    
-    // Format: BABYPHONE|EMITTER|MAC
-    String msg = "BABYPHONE|EMITTER|" + WiFi.macAddress();
-    
-    UdpDiscovery.print(msg);
-    UdpDiscovery.endPacket();
-    
-    lastDiscoveryTime = millis();
-    // Serial.println("Broadcast sent: " + msg); 
+  pinMode(LED_PIN, OUTPUT);
+  
+  // 🟢 AJOUT CRITIQUE : On attend que tu ouvres le moniteur
+  digitalWrite(LED_BUILTIN, HIGH); 
+  while (!Serial) {
+    delay(100); 
   }
-}
+  digitalWrite(LED_BUILTIN, LOW); 
+  delay(500);
 
-float calculateRMS(const uint16_t* data, int length) {
-  long sum = 0;
-  for (int i = 0; i < length; i++) {
-    int32_t sample = (int32_t)data[i] - 2048; 
-    sum += sample * sample;
+  Serial.println("\n\n--------------------------------");
+  Serial.println("--- DÉMARRAGE TEST ÉMETTEUR ---");
+  Serial.println("--------------------------------");
+  Serial.print("MAC Address: "); Serial.println(WiFi.macAddress());
+
+  bool connectionSuccess = false;
+
+  if (creds.configured && String(creds.ssid).length() > 0) {
+     Serial.print(">> Config trouvée. Connexion à: ["); 
+     Serial.print(creds.ssid);
+     Serial.println("]");
+     
+     WiFi.disconnect(true);
+     delay(100);
+     WiFi.mode(WIFI_STA);
+     
+     String hostname = "Babyphone-Emetteur-" + String(WiFi.macAddress());
+     hostname.replace(":", "");
+     WiFi.setHostname(hostname.c_str());
+     
+     WiFi.begin(creds.ssid, creds.password);
+
+     unsigned long start = millis();
+     while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) { 
+       digitalWrite(LED_PIN, !digitalRead(LED_PIN)); 
+       delay(250); 
+       Serial.print(".");
+     }
+     
+     if (WiFi.status() == WL_CONNECTED) connectionSuccess = true;
+  } else {
+     Serial.println(">> Aucune config valide en mémoire (EEPROM vide ou effacée).");
   }
-  return sqrt((float)sum / length);
-}
 
-void writeWavHeader(WiFiClient& client) {
-  WavHeader header;
-  client.write((const uint8_t*)&header, sizeof(header));
-}
-
-void createFinalWavHeader(uint8_t* headerBuffer, uint32_t finalDataSize) {
-    WavHeader header; 
-    header.chunkSize = finalDataSize + 44 - 8;
-    header.subchunk2Size = finalDataSize;
-    memcpy(headerBuffer, (const uint8_t*)&header, sizeof(WavHeader));
-}
-
-void stopRecording(bool isError = false) {
-    if (isRecording && tcpClient.connected()) {
-        if (!isError) {
-             uint8_t finalHeader[44];
-             createFinalWavHeader(finalHeader, dataSize);
-             tcpClient.write(finalHeader, 44); 
-             Serial.println(" -> Fin normale.");
-        } else {
-             Serial.println(" -> COUPURE D'URGENCE.");
-        }
+  if (connectionSuccess) {
+    Serial.println("\n\n--- WIFI CONNECTÉ ---");
+    Serial.print("IP: "); Serial.println(WiFi.localIP());
+    digitalWrite(LED_PIN, LOW); 
+    isInConfigMode = false;
+    UdpDiscovery.begin(DISCOVERY_PORT);
+  } else {
+    Serial.println("\n\n--- ECHEC WIFI OU PAS DE CONFIG -> MODE BLE ---");
+    digitalWrite(LED_PIN, HIGH); // LED Fixe = Mode BLE
+    isInConfigMode = true;
+    
+    Serial.println("Lancement du Scan WiFi pour le BLE...");
+    int n = WiFi.scanNetworks();
+    cachedWifiList = "";
+    int max = (n > 10) ? 10 : n;
+    for (int i = 0; i < max; ++i) {
+       if(String(WiFi.SSID(i)).length() > 0) {
+           cachedWifiList += String(WiFi.SSID(i));
+           if (i < max - 1) cachedWifiList += "|";
+       }
     }
-    tcpClient.stop();
-    isRecording = false;
+    Serial.println(">> Liste WiFi prête. Publicité BLE démarrée.");
+  }
 }
+
+// --- CALLBACKS BLE ---
+
+int appWriteCallback(uint16_t value_handle, uint8_t *buffer, uint16_t size) {
+  if (isInConfigMode) {
+    for (int i=0; i<size; i++) bleBuffer += (char)buffer[i];
+    
+    if (bleBuffer.indexOf('\n') > 0) {
+       Serial.print("Reçu BLE brut: "); Serial.println(bleBuffer);
+       bleBuffer.trim();
+
+       if (bleBuffer == "ERASE") {
+           Serial.println("Commande ERASE reçue !");
+           WifiCredentials empty; 
+           empty.configured = false;
+           memset(empty.ssid, 0, 32);
+           memset(empty.password, 0, 64);
+           
+           EEPROM.put(0, empty); 
+           EEPROM.commit();
+           Serial.println("EEPROM effacée. Reboot...");
+           delay(1000);
+           rp2040.reboot();
+           return 0;
+       }
+       
+       int sep = bleBuffer.indexOf('|');
+       if (sep > 0) {
+          WifiCredentials newCreds;
+          String s = bleBuffer.substring(0, sep);
+          String p = bleBuffer.substring(sep + 1);
+          s.trim(); p.trim(); 
+          
+          s.toCharArray(newCreds.ssid, 32);
+          p.toCharArray(newCreds.password, 64);
+          newCreds.configured = true;
+          
+          Serial.print("Sauvegarde SSID: "); Serial.println(newCreds.ssid);
+          
+          EEPROM.put(0, newCreds);
+          if (EEPROM.commit()) {
+             Serial.println("Config sauvegardée ! Reboot...");
+             delay(1000);
+             rp2040.reboot();
+          }
+       }
+       bleBuffer = ""; 
+    }
+  }
+  return 0;
+}
+
+uint16_t gattReadCallback(uint16_t value_handle, uint8_t * buffer, uint16_t buffer_size) {
+  if (isInConfigMode) {
+    if (buffer) {
+       int len = cachedWifiList.length();
+       if (len > buffer_size) len = buffer_size;
+       memcpy(buffer, cachedWifiList.c_str(), len);
+       return len;
+    }
+    return cachedWifiList.length();
+  }
+  return 0;
+}
+
+// ==========================================
+// 3. MAIN
+// ==========================================
 
 void setup() {
   Serial.begin(115200);
-  WiFi.noLowPowerMode(); 
-  adc_init();
-  adc_gpio_init(micPin); 
-  adc_select_input(0);
+  setupWifi();
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) { delay(500); }
-  Udp.begin(udpPort);
+  // Setup BLE
+  BTstack.setGATTCharacteristicRead(gattReadCallback);
+  BTstack.setGATTCharacteristicWrite(appWriteCallback);
+
+  if (isInConfigMode) {
+    BTstack.addGATTService(new UUID(APP_SERVICE_UUID));
+    BTstack.addGATTCharacteristicDynamic(new UUID(APP_CONFIG_UUID), ATT_PROPERTY_WRITE, 0);
+    BTstack.addGATTCharacteristicDynamic(new UUID(APP_SCAN_UUID), ATT_PROPERTY_READ, 0);
+  }
   
-  Serial.println("Emetteur pret. IP: " + WiFi.localIP().toString());
-  Serial.println("Mac: " + WiFi.macAddress());
+  // 🔴 LIGNE SUPPRIMÉE : BTstack.setDeviceName("BabyphoneConfig"); 
+  // La librairie n'a pas cette fonction.
+
+  BTstack.setup();
+  BTstack.startAdvertising();
 }
 
 void loop() {
-  // 1. GESTION DECOUVERTE (Si pas encore associé)
-  if (!isPaired) {
-    broadcastPresence();
-  }
+  BTstack.loop();
 
-  // 2. Acquisition Audio
-  unsigned long samplePeriod = 1000000UL / sampleRate; 
-  for (int i = 0; i < bufferSize; i++) {
-    unsigned long now = micros();
-    if (now < lastSampleTime + samplePeriod) {
-      delayMicroseconds((lastSampleTime + samplePeriod) - now);
-    }
-    audioBuffer[i] = adc_read(); 
-    lastSampleTime = micros();
-  }
-
-  // 3. Diffusion UDP (Toujours actif pour le récepteur)
-  Udp.beginPacket(receiverIp, udpPort);
-  Udp.write((const uint8_t*)audioBuffer, bufferSize * 2); 
-  Udp.endPacket();
-
-  // 4. Calcul RMS & Enregistrement PC
-  float rms = calculateRMS(audioBuffer, bufferSize);
-  
-  // Traceur série (décommenter si besoin de recalibrer)
-  // Serial.print(rms); Serial.print(","); Serial.print(NOISE_THRESHOLD_RMS); Serial.println(...);
-
-  // Sécurité anti-pic
-  if (rms > MAX_NOISE_THRESHOLD) {
-      if (isRecording) stopRecording(true);
-      return; 
-  }
-
-  if (!isRecording) {
-      if (rms > NOISE_THRESHOLD_RMS) {
-          if (tcpClient.connect(fileReceiverIp, fileReceiverPort)) {
-              writeWavHeader(tcpClient);
-              isRecording = true;
-              recordingStartTime = millis();
-              dataSize = 0;
-          }
-      }
-  } 
-  
-  if (isRecording) {
-      if (tcpClient.connected()) {
-          size_t written = tcpClient.write((const uint8_t*)audioBuffer, bufferSize * 2);
-          dataSize += written;
+  if (!isInConfigMode) {
+      if (millis() - lastDiscoveryTime > 2000) {
+          IPAddress broadcastIp(255, 255, 255, 255);
+          UdpDiscovery.beginPacket(broadcastIp, DISCOVERY_PORT);
+          String msg = "BABYPHONE|EMITTER|" + WiFi.macAddress();
+          UdpDiscovery.print(msg);
+          UdpDiscovery.endPacket();
           
-          bool isQuiet = (rms < QUIET_THRESHOLD_RMS); 
-          bool minDurationMet = (millis() - recordingStartTime) > MIN_RECORDING_DURATION_MS;
-
-          if (isQuiet && minDurationMet) {
-              stopRecording(false); 
-          }
-      } else {
-          isRecording = false; 
+          lastDiscoveryTime = millis();
+          
+          Serial.print("Ping UDP envoyé à 255.255.255.255 : ");
+          Serial.println(msg);
       }
   }
 }

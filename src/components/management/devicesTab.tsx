@@ -1,167 +1,217 @@
 import React, { useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 
-// Import de tes composants et services réels
 import { DeviceScannerModal } from '@/src/components/deviceScannerModal';
+import { BleConfigModal } from '@/src/components/bleConfigModal';
 import { useDeviceDiscovery } from '@/src/hooks/useDeviceDiscovery'; 
-import { linkDeviceToMember } from '@/src/services/familyService';
+// Assurez-vous que linkDeviceToFamily est bien importé si vous l'utilisez
+import { linkDeviceToMember, unlinkDeviceFromFamily, linkDeviceToFamily, unlinkDeviceFromMember } from '@/src/services/familyService'; 
 import { DiscoveredDevice } from '@/src/models/device';
 import { auth } from '@/config/firebaseConfig';
 
-// 1. Définition de l'interface pour typer les appareils (fini les 'any')
 interface DeviceItem {
-  deviceId?: string;
+  deviceId: string;
   type?: string;
   status?: string;
   serialNumber?: string;
 }
 
 interface DevicesTabProps {
-  devices: DeviceItem[]; // Typage strict
+  devices: DeviceItem[];
   familyId: string;
 }
 
 export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
-  const [isModalVisible, setModalVisible] = useState(false);
-  
-  const { 
-    startScanning, 
-    stopScanning, 
-    foundDevices,
-    isScanning, 
-  } = useDeviceDiscovery();
+  const [isScannerVisible, setScannerVisible] = useState<boolean>(false);
+  const [isConfigModalVisible, setConfigModalVisible] = useState<boolean>(false);
 
+  const { startScanning, stopScanning, foundDevices } = useDeviceDiscovery();
+
+  // --- LOGIQUE ASSOCIATION (UDP) ---
   const handleOpenScanner = () => {
-    setModalVisible(true);
+    setScannerVisible(true);
     startScanning();
-  };
-
-  const handleCloseScanner = () => {
-    setModalVisible(false);
-    stopScanning();
   };
 
   const handleSelectDevice = async (device: DiscoveredDevice) => {
     const user = auth.currentUser;
-    if (!user) {
-      Alert.alert('Erreur', 'Vous devez être connecté.');
-      return;
-    }
+    if (!user) return;
 
     try {
       stopScanning();
       
-      await linkDeviceToMember(familyId, user.uid, {
+      // Utilisation de linkDeviceToFamily pour UDP selon votre logique
+      await linkDeviceToFamily(familyId, {
         serialNumber: device.id,
         type: device.type,
       });
-
-      Alert.alert('Succès', 'Appareil associé avec succès !');
-      setModalVisible(false);
       
+      Alert.alert('Succès', 'Appareil associé à votre compte !');
+      setScannerVisible(false);
     } catch (error) {
       console.error(error);
-      Alert.alert('Erreur', 'Impossible d\'associer l\'appareil.');
-      startScanning();
+      Alert.alert('Erreur', 'Impossible d\'associer.');
+      startScanning(); 
     }
   };
 
-  const hasDevices = devices && devices.length > 0;
+  // --- CALLBACKS CONFIG BLE ---
+  
+  // FIX LINTER : Typage explicite des arguments
+  const handleBleSuccess = async (deviceId: string, type: string) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      // Lien immédiat après configuration du Wi-Fi
+      await linkDeviceToMember(familyId, user.uid, {
+        serialNumber: deviceId,
+        type: type, 
+      });
+    } catch (error) {
+      console.error('Erreur lien Firebase après BLE:', error);
+      Alert.alert('Attention', 'Wi-Fi configuré, mais échec de l\'enregistrement en BDD.');
+    }
+  };
+
+  const handleBleReset = async (_deviceId: string) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    try {
+      await unlinkDeviceFromMember(familyId, user.uid);
+    } catch (e) { 
+      console.log('Erreur dissociation après reset BLE:', e); 
+    }
+  };
+
+  // --- LOGIQUE DISSOCIATION ---
+  const handleDeviceRemove = async (deviceId: string) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    Alert.alert(
+      'Confirmer la suppression',
+      `Voulez-vous vraiment dissocier l'appareil ${deviceId} de la famille ?`,
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Supprimer',
+          onPress: async () => {
+            try {
+              await unlinkDeviceFromFamily(familyId, deviceId);
+              Alert.alert('Succès', 'Appareil dissocié de la famille.');
+            } catch (e) {
+              console.error(e);
+              Alert.alert('Erreur', 'Impossible de dissocier l\'appareil.');
+            }
+          },
+          style: 'destructive',
+        },
+      ],
+    );
+  };
 
   return (
     <View style={styles.container}>
       
+      {/* 1. MODALE SCANNER UDP */}
       <DeviceScannerModal 
-        visible={isModalVisible}
+        visible={isScannerVisible}
         devices={foundDevices}
-        onClose={handleCloseScanner}
+        onClose={() => { setScannerVisible(false); stopScanning(); }}
         onSelectDevice={handleSelectDevice}
       />
 
-      <TouchableOpacity 
-        style={styles.deviceActionButton}
-        onPress={handleOpenScanner} 
-        disabled={isScanning && !isModalVisible}
-      >
-        <Text style={styles.deviceActionText}>🔍 Trouver et associer un appareil</Text>
-      </TouchableOpacity>
+      {/* 2. MODALE CONFIG BLE */}
+      <BleConfigModal 
+        visible={isConfigModalVisible}
+        onClose={() => setConfigModalVisible(false)}
+        // FIX LINTER CRITIQUE : 
+        // 1. On enveloppe la fonction async pour éviter l'erreur "Promise returned in void"
+        // 2. On type explicitement les arguments de la callback
+        onSuccess={(id: string, type: string) => {
+          void handleBleSuccess(id, type);
+        }}
+        onReset={(id: string) => {
+          void handleBleReset(id);
+        }}
+      />
 
-      <Text style={styles.sectionTitle}>Appareils associés</Text>
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.btnConfig} onPress={() => setConfigModalVisible(true)}>
+          <Text style={styles.btnConfigText}>⚙️ 1. Configurer Wi-Fi (Bluetooth)</Text>
+        </TouchableOpacity>
 
-      {!hasDevices ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Aucun appareil associé à la famille.</Text>
-          <Text style={styles.emptySubText}>Associez un babyphone pour commencer à surveiller.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={devices}
-          keyExtractor={(item, index) => item.deviceId || index.toString()}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <View style={styles.cardItem}>
-              <View style={styles.iconBox}>
-                <Text style={{ fontSize: 24 }}>
-                  {item.type === 'EMITTER' ? '👶' : '👂'}
-                </Text> 
-              </View>
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>
-                  {item.type === 'EMITTER' ? 'Émetteur (Bébé)' : 'Récepteur (Parent)'}
-                </Text>
-                <Text style={styles.itemSub}>ID: {item.deviceId}</Text>
-              </View>
-              
-              <View style={[styles.statusContainer, { backgroundColor: item.status === 'online' ? '#C6F6D5' : '#FED7D7' }]}>
-                <Text style={{ color: item.status === 'online' ? '#22543D' : '#822727', fontSize: 10, fontWeight:'bold' }}>
-                  {item.status === 'online' ? 'EN LIGNE' : 'HORS LIGNE'}
-                </Text>
-              </View>
+        <TouchableOpacity style={styles.btnScan} onPress={handleOpenScanner}>
+          <Text style={styles.btnScanText}>🔍 2. Associer Appareil (Déjà connecté)</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.title}>Mes Appareils</Text>
+
+      <FlatList
+        data={devices}
+        keyExtractor={(item) => item.deviceId}
+        scrollEnabled={false}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.icon}>{item.type === 'EMITTER' ? '👶' : '👂'}</Text>
+            <View style={{flexGrow: 1}}>
+              <Text style={styles.name}>{item.type === 'EMITTER' ? 'Émetteur' : 'Récepteur'}</Text>
+              <Text style={styles.sub}>{item.deviceId}</Text>
             </View>
-          )}
-        />
-      )}
+            
+            <View style={[styles.badge, { backgroundColor: item.status === 'online' ? '#C6F6D5' : '#FED7D7', marginRight: 10 }]}>
+              <Text style={{fontSize:12, fontWeight:'bold', color: item.status === 'online'?'green':'red'}}>
+                {item.status === 'online' ? 'ON' : 'OFF'}
+              </Text>
+            </View>
+
+            {/* BOUTON SUPPRIMER */}
+            <TouchableOpacity 
+              style={styles.btnRemove} 
+              onPress={() => handleDeviceRemove(item.deviceId)}
+            >
+              <Text style={styles.btnRemoveText}>supprimer</Text>
+            </TouchableOpacity>
+
+          </View>
+        )}
+        ListEmptyComponent={<Text style={styles.empty}>Aucun appareil associé.</Text>}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#2d3748', marginTop: 25, marginBottom: 15 },
+  container: { flex: 1, padding: 10 },
+  actions: { marginBottom: 20 },
+  btnConfig: { backgroundColor: '#E9D8FD', padding: 15, borderRadius: 10, marginBottom: 10, alignItems:'center' },
+  btnConfigText: { color: '#6b46c1', fontWeight: 'bold' },
+  btnScan: { backgroundColor: '#EDF2F7', padding: 15, borderRadius: 10, alignItems:'center', borderStyle:'dashed', borderWidth:1, borderColor:'#CBD5E0' },
+  btnScanText: { color: '#4A5568', fontWeight: 'bold' },
   
-  deviceActionButton: {
-    backgroundColor: '#EDF2F7',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2, 
-    borderColor: '#CBD5E0',
-    borderStyle: 'dashed',
-  },
-  deviceActionText: { color: '#4A5568', fontSize: 16, fontWeight: '700' },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#2D3748' },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 10, elevation: 2 },
+  icon: { fontSize: 24, marginRight: 15 },
+  name: { fontWeight: 'bold', fontSize: 16 },
+  sub: { color: 'gray', fontSize: 12 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }, 
+  empty: { textAlign: 'center', color: 'gray', marginTop: 20 },
 
-  emptyContainer: { marginTop: 10, padding: 10 },
-  emptyText: { color: '#4A5568', fontSize: 16, marginBottom: 4 },
-  emptySubText: { color: '#A0AEC0', fontSize: 14 },
-
-  cardItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, shadowOffset: { width: 0, height: 2 },
+  btnRemove: {
+    marginLeft: 'auto',
+    padding: 6,
+    borderRadius: 4,
+    backgroundColor: '#FED7D7',
   },
-  iconBox: {
-    width: 50, height: 50, borderRadius: 14, marginRight: 16,
-    backgroundColor: '#F7FAFC', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#EDF2F7',
+  btnRemoveText: {
+    fontSize: 13,
+    color: '#E53E3E',
+    fontWeight: 'bold',
   },
-  itemInfo: { flex: 1 },
-  itemName: { fontSize: 16, fontWeight: 'bold', color: '#2d3748' },
-  itemSub: { fontSize: 14, color: '#718096' },
-  
-  statusContainer: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
 });
