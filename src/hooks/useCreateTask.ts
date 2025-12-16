@@ -1,13 +1,14 @@
 // src/hooks/useCreateTask.ts
-import { useState, useEffect } from 'react';
-import { Alert, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import { collection, getDocs, Timestamp } from 'firebase/firestore';
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
+import { collection, getDocs } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { Alert, Platform } from 'react-native';
 
 import { db } from '../../config/firebaseConfig';
+import { TaskStatus, TaskType, Tutor } from '../models/task'; // Assure-toi que ce chemin est bon
+import { createNotification } from '../services/notificationService';
 import { taskService } from '../services/taskService';
-import { TaskType, TaskStatus, Tutor } from '../models/task'; // Assure-toi que ce chemin est bon
 
 // Interfaces locales
 export interface FormErrors {
@@ -26,7 +27,7 @@ interface CreateTaskData {
   Tolerance: number;
   Validation: boolean;
   assignedMembers: string[];
-  startDateTime?: Date | Timestamp;
+  startDateTime?: Date;
   nextOccurrence?: Date;
   fixedTimes?: string[];
   comments?: string;
@@ -198,7 +199,7 @@ export const useCreateTask = (familyId: string | undefined) => {
 
       if (taskType === 'recurring') {
         createTaskData.Tolerance = parseInt(interval, 10);
-        createTaskData.startDateTime = Timestamp.fromDate(startDateTime);
+        createTaskData.startDateTime = startDateTime;
       }
 
       if (taskType === 'temporal') {
@@ -208,10 +209,19 @@ export const useCreateTask = (familyId: string | undefined) => {
       if (taskType === 'event') {
         createTaskData.comments = comments.trim();
         createTaskData.evaluation = evaluation;
-        createTaskData.startDateTime = Timestamp.fromDate(startDateTime);
+        createTaskData.startDateTime = startDateTime;
       }
 
-      await taskService.createTask(familyId, createTaskData);
+      const taskId = await taskService.createTask(familyId, createTaskData);
+
+      // 🔔 NOTIFICATION : nouvelle tâche créée
+      await createNotification({
+        familyId,
+        sourceId: taskId,
+        type: 'task_start',
+        title: 'Nouvelle tâche créée',
+        message: `La tâche "${taskName}" a été créée`,
+      });
 
       Alert.alert('Succès', 'Tâche créée avec succès !', [
         { text: 'OK', onPress: () => router.back() },
@@ -232,7 +242,10 @@ export const useCreateTask = (familyId: string | undefined) => {
   };
 
   // Helper pour nettoyer les erreurs lors de la saisie
-  const handleTextChange = (setter: React.Dispatch<React.SetStateAction<string>>, errorKey?: keyof FormErrors) => (text: string) => {
+  const handleTextChange = (
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    errorKey?: keyof FormErrors,
+  ) => (text: string) => {
     setter(text);
     if (errorKey && errors[errorKey]) {
       setErrors(prev => ({ ...prev, [errorKey]: undefined }));
