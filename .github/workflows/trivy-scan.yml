@@ -1,0 +1,47 @@
+name: Trivy Security Scan
+on: [push, pull_request]
+
+jobs:
+    security-scan:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Run Trivy for dependencies
+              uses: aquasecurity/trivy-action@master
+              with:
+                  scan-type: "fs"
+                  scan-ref: "."
+                  format: "table"
+                  exit-code: "1"
+                  severity: "CRITICAL,HIGH"
+                  ignore-unfixed: true
+
+            - name: Check if firestore.rules exists
+              id: check_firestore_rules
+              run: |
+                  if [ -f "firestore.rules" ]; then
+                    echo "exists=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "exists=false" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Run Trivy for Firestore rules
+              if: steps.check_firestore_rules.outputs.exists == 'true'
+              run: trivy config firestore.rules
+
+            - name: Check if firebase.json exists
+              id: check_firebase_json
+              run: |
+                  if [ -f "firebase.json" ]; then
+                    echo "exists=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "exists=false" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Run Trivy for Firebase config
+              if: steps.check_firebase_json.outputs.exists == 'true'
+              run: trivy config firebase.json
