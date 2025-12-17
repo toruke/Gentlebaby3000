@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { 
+  FlatList, StyleSheet, Text, TouchableOpacity, View, Alert, 
+  Modal, TextInput, // Ajout de Modal et TextInput
+} from 'react-native';
 
 import { DeviceScannerModal } from '@/src/components/deviceScannerModal';
 import { BleConfigModal } from '@/src/components/bleConfigModal';
 import { useDeviceDiscovery } from '@/src/hooks/useDeviceDiscovery'; 
-// Assurez-vous que linkDeviceToFamily est bien importé si vous l'utilisez
 import { linkDeviceToMember, unlinkDeviceFromFamily, linkDeviceToFamily, unlinkDeviceFromMember } from '@/src/services/familyService'; 
 import { DiscoveredDevice } from '@/src/models/device';
 import { auth } from '@/config/firebaseConfig';
@@ -22,8 +24,14 @@ interface DevicesTabProps {
 }
 
 export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
+  // États pour les Modales existantes
   const [isScannerVisible, setScannerVisible] = useState<boolean>(false);
   const [isConfigModalVisible, setConfigModalVisible] = useState<boolean>(false);
+
+  // NOUVEAUX ÉTATS POUR LA SESSION
+  const [isSessionModalVisible, setSessionModalVisible] = useState<boolean>(false);
+  const [inputServerIp, setInputServerIp] = useState<string>('192.168.129.45'); // Valeur par défaut (ton PC)
+  const [inputReceiverIp, setInputReceiverIp] = useState<string>(''); // À remplir
 
   const { startScanning, stopScanning, foundDevices } = useDeviceDiscovery();
 
@@ -39,13 +47,10 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
 
     try {
       stopScanning();
-      
-      // Utilisation de linkDeviceToFamily pour UDP selon votre logique
       await linkDeviceToFamily(familyId, {
         serialNumber: device.id,
         type: device.type,
       });
-      
       Alert.alert('Succès', 'Appareil associé à votre compte !');
       setScannerVisible(false);
     } catch (error) {
@@ -56,14 +61,11 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
   };
 
   // --- CALLBACKS CONFIG BLE ---
-  
-  // FIX LINTER : Typage explicite des arguments
   const handleBleSuccess = async (deviceId: string, type: string) => {
     const user = auth.currentUser;
     if (!user) return;
 
     try {
-      // Lien immédiat après configuration du Wi-Fi
       await linkDeviceToMember(familyId, user.uid, {
         serialNumber: deviceId,
         type: type, 
@@ -77,7 +79,6 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
   const handleBleReset = async (_deviceId: string) => {
     const user = auth.currentUser;
     if (!user) return;
-    
     try {
       await unlinkDeviceFromMember(familyId, user.uid);
     } catch (e) { 
@@ -94,10 +95,7 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
       'Confirmer la suppression',
       `Voulez-vous vraiment dissocier l'appareil ${deviceId} de la famille ?`,
       [
-        {
-          text: 'Annuler',
-          style: 'cancel',
-        },
+        { text: 'Annuler', style: 'cancel' },
         {
           text: 'Supprimer',
           onPress: async () => {
@@ -115,26 +113,34 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
     );
   };
 
-  const createSession = async (serverIp: string, receiverIp: string) => {
+  // --- LOGIQUE SESSION ---
+  const createSession = async () => {
+    if (!inputServerIp || !inputReceiverIp) {
+      Alert.alert('Erreur', 'Veuillez remplir les deux adresses IP.');
+      return;
+    }
+
+    // Fermer la modale
+    setSessionModalVisible(false);
+
     try {
-      const response = await fetch(`http://${serverIp}:8080/create_session`, {
+      const response = await fetch(`http://${inputServerIp}:8080/create_session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          receiverIp: receiverIp, // L'IP du récepteur sélectionné
+          receiverIp: inputReceiverIp,
         }),
       });
     
       const json = await response.json();
       console.log('Session créée:', json);
-      Alert.alert('Session Active', 'Le babyphone écoute !');
+      Alert.alert('Session Active', `Le babyphone écoute et enverra vers ${inputReceiverIp} !`);
     
     } catch (error) {
       console.error('Erreur connexion serveur:', error);
-      console.log('Erreur connexion serveur:', error);
-      Alert.alert('Erreur', 'Impossible de joindre le serveur PC');
+      Alert.alert('Erreur', 'Impossible de joindre le serveur PC (' + inputServerIp + ')');
     }
   };
 
@@ -153,16 +159,51 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
       <BleConfigModal 
         visible={isConfigModalVisible}
         onClose={() => setConfigModalVisible(false)}
-        // FIX LINTER CRITIQUE : 
-        // 1. On enveloppe la fonction async pour éviter l'erreur "Promise returned in void"
-        // 2. On type explicitement les arguments de la callback
-        onSuccess={(id: string, type: string) => {
-          void handleBleSuccess(id, type);
-        }}
-        onReset={(id: string) => {
-          void handleBleReset(id);
-        }}
+        onSuccess={(id: string, type: string) => { void handleBleSuccess(id, type); }}
+        onReset={(id: string) => { void handleBleReset(id); }}
       />
+
+      {/* 3. MODALE SESSION (Nouvelle) */}
+      <Modal
+        visible={isSessionModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setSessionModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Démarrer une Session</Text>
+                
+            <Text style={styles.label}>IP du Serveur (PC) :</Text>
+            <TextInput 
+              style={styles.input}
+              value={inputServerIp}
+              onChangeText={setInputServerIp}
+              placeholder="Ex: 192.168.1.10"
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.label}>IP du Récepteur (Babyphone) :</Text>
+            <TextInput 
+              style={styles.input}
+              value={inputReceiverIp}
+              onChangeText={setInputReceiverIp}
+              placeholder="Ex: 192.168.1.50"
+              keyboardType="numeric"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnCancel} onPress={() => setSessionModalVisible(false)}>
+                <Text style={{color: 'gray'}}>Annuler</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.btnConfirm} onPress={createSession}>
+                <Text style={{color: 'white', fontWeight: 'bold'}}>Valider</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.btnConfig} onPress={() => setConfigModalVisible(true)}>
@@ -173,8 +214,11 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
           <Text style={styles.btnScanText}>🔍 2. Associer Appareil</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btnSess} onPress={() => createSession('192.168.129.45', '192.168.129.192')}>
-          <Text style={styles.btnSessText}>Démarrer une session</Text>
+        <TouchableOpacity 
+          style={styles.btnSess} 
+          onPress={() => setSessionModalVisible(true)}
+        >
+          <Text style={styles.btnSessText}>📡 3. Démarrer une session</Text>
         </TouchableOpacity>
       </View>
 
@@ -198,12 +242,11 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
               </Text>
             </View>
 
-            {/* BOUTON SUPPRIMER */}
             <TouchableOpacity 
               style={styles.btnRemove} 
               onPress={() => handleDeviceRemove(item.deviceId)}
             >
-              <Text style={styles.btnRemoveText}>supprimer</Text>
+              <Text style={styles.btnRemoveText}>🗑️</Text>
             </TouchableOpacity>
 
           </View>
@@ -217,12 +260,15 @@ export default function DevicesTab({ devices, familyId }: DevicesTabProps) {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 10 },
   actions: { marginBottom: 20 },
+  
   btnConfig: { backgroundColor: '#E9D8FD', padding: 15, borderRadius: 10, marginBottom: 10, alignItems:'center' },
   btnConfigText: { color: '#6b46c1', fontWeight: 'bold' },
+  
   btnScan: { backgroundColor: '#EDF2F7', padding: 15, borderRadius: 10, alignItems:'center', borderStyle:'dashed', borderWidth:1, borderColor:'#CBD5E0' },
   btnScanText: { color: '#4A5568', fontWeight: 'bold' },
-  btnSess: { backgroundColor: '#C6F6D5', padding: 12, borderRadius: 10, alignItems:'center', marginTop:10 },
-  btnSessText: { color: 'green', fontWeight: 'bold' },
+  
+  btnSess: { backgroundColor: '#C6F6D5', padding: 15, borderRadius: 10, alignItems:'center', marginTop:10 },
+  btnSessText: { color: 'green', fontWeight: 'bold', fontSize: 16 },
   
   title: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#2D3748' },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 10, elevation: 2 },
@@ -234,13 +280,64 @@ const styles = StyleSheet.create({
 
   btnRemove: {
     marginLeft: 'auto',
-    padding: 6,
-    borderRadius: 4,
+    padding: 8,
+    borderRadius: 6,
     backgroundColor: '#FED7D7',
   },
   btnRemoveText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#E53E3E',
     fontWeight: 'bold',
+  },
+
+  // STYLES POUR LA NOUVELLE MODALE SESSION
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 15,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#2D3748',
+  },
+  label: {
+    fontWeight: '600',
+    marginBottom: 5,
+    color: '#4A5568',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#CBD5E0',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    fontSize: 16,
+    backgroundColor: '#F7FAFC',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  btnCancel: {
+    padding: 10,
+    marginRight: 15,
+  },
+  btnConfirm: {
+    backgroundColor: '#6b46c1',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
   },
 });
