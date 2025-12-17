@@ -1,13 +1,14 @@
 // src/hooks/useCreateTask.ts
-import { useState, useEffect } from 'react';
-import { Alert, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import { collection, getDocs, Timestamp } from 'firebase/firestore';
 import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
+import { collection, getDocs } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { Alert, Platform } from 'react-native';
 
 import { db } from '../../config/firebaseConfig';
+import { TaskStatus, TaskType, Tutor } from '../models/task'; // Assure-toi que ce chemin est bon
+import { createNotification } from '../services/notificationService';
 import { taskService } from '../services/taskService';
-import { TaskType, TaskStatus, Tutor } from '../models/task'; // Assure-toi que ce chemin est bon
 
 // Interfaces locales
 export interface FormErrors {
@@ -26,7 +27,7 @@ interface CreateTaskData {
   Tolerance: number;
   Validation: boolean;
   assignedMembers: string[];
-  startDateTime?: Date | Timestamp;
+  startDateTime?: Date;
   nextOccurrence?: Date;
   fixedTimes?: string[];
   comments?: string;
@@ -46,7 +47,7 @@ export const useCreateTask = (familyId: string | undefined) => {
   const [fixedTimes, setFixedTimes] = useState<string>('13:00, 19:00');
   const [comments, setComments] = useState<string>('');
   const [evaluation, setEvaluation] = useState<number>(0);
-  
+
   // États UI
   const [errors, setErrors] = useState<FormErrors>({});
   const [availableTutors, setAvailableTutors] = useState<Tutor[]>([]);
@@ -61,12 +62,10 @@ export const useCreateTask = (familyId: string | undefined) => {
 
       try {
         setLoading(true);
-        console.log(`🔍 Recherche des membres pour la famille : ${familyId}`);
 
         let querySnapshot = await getDocs(collection(db, 'family', familyId, 'members'));
-        
+
         if (querySnapshot.empty) {
-          console.log('⚠️ Pas de membres, fallback sur users global...');
           querySnapshot = await getDocs(collection(db, 'users'));
         }
 
@@ -133,24 +132,24 @@ export const useCreateTask = (familyId: string | undefined) => {
 
   const calculateNextOccurrence = (): Date => {
     const now = new Date();
-    
+
     if (taskType === 'recurring') {
       const intervalNum = parseInt(interval, 10);
       const nextDate = new Date(startDateTime);
-      
+
       while (nextDate <= now) {
         nextDate.setHours(nextDate.getHours() + intervalNum);
       }
       return nextDate;
     }
-    
+
     if (taskType === 'temporal') {
       const times = fixedTimes.split(',').map(t => t.trim()).filter(t => t);
       const today = new Date();
       const currentHourMin = today.toTimeString().substring(0, 5);
-      
+
       // Trier les heures pour être sûr
-      times.sort(); 
+      times.sort();
 
       for (const fixedTime of times) {
         if (fixedTime > currentHourMin) {
@@ -160,7 +159,7 @@ export const useCreateTask = (familyId: string | undefined) => {
           return nextDate;
         }
       }
-      
+
       // Si aucune heure trouvée aujourd'hui, prendre la première de demain
       const [hours, minutes] = times[0].split(':').map(Number);
       const nextDate = new Date(today);
@@ -168,7 +167,7 @@ export const useCreateTask = (familyId: string | undefined) => {
       nextDate.setHours(hours, minutes, 0, 0);
       return nextDate;
     }
-    
+
     return startDateTime;
   };
 
@@ -200,7 +199,7 @@ export const useCreateTask = (familyId: string | undefined) => {
 
       if (taskType === 'recurring') {
         createTaskData.Tolerance = parseInt(interval, 10);
-        createTaskData.startDateTime = Timestamp.fromDate(startDateTime);
+        createTaskData.startDateTime = startDateTime;
       }
 
       if (taskType === 'temporal') {
@@ -210,11 +209,19 @@ export const useCreateTask = (familyId: string | undefined) => {
       if (taskType === 'event') {
         createTaskData.comments = comments.trim();
         createTaskData.evaluation = evaluation;
-        createTaskData.startDateTime = Timestamp.fromDate(startDateTime);
+        createTaskData.startDateTime = startDateTime;
       }
 
-      await taskService.createTask(familyId, createTaskData);
-      console.log('✅ Tâche créée');
+      const taskId = await taskService.createTask(familyId, createTaskData);
+
+      // 🔔 NOTIFICATION : nouvelle tâche créée
+      await createNotification({
+        familyId,
+        sourceId: taskId,
+        type: 'task_start',
+        title: 'Nouvelle tâche créée',
+        message: `La tâche "${taskName}" a été créée`,
+      });
 
       Alert.alert('Succès', 'Tâche créée avec succès !', [
         { text: 'OK', onPress: () => router.back() },
@@ -235,7 +242,10 @@ export const useCreateTask = (familyId: string | undefined) => {
   };
 
   // Helper pour nettoyer les erreurs lors de la saisie
-  const handleTextChange = (setter: React.Dispatch<React.SetStateAction<string>>, errorKey?: keyof FormErrors) => (text: string) => {
+  const handleTextChange = (
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    errorKey?: keyof FormErrors,
+  ) => (text: string) => {
     setter(text);
     if (errorKey && errors[errorKey]) {
       setErrors(prev => ({ ...prev, [errorKey]: undefined }));

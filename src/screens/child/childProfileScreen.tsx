@@ -78,13 +78,13 @@ export default function ChildProfileScreen() {
     };
 
     loadChild();
-  }, []);
+  }, [childId, familyId]);
 
   // Choisir une photo locale
   const pickLocalPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      return Alert.alert('Autorisation refusée', 'Veuillez autoriser l’accès aux photos.');
+      return Alert.alert('Autorisation refusée', 'Veuillez autoriser l\'accès aux photos.');
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -100,7 +100,7 @@ export default function ChildProfileScreen() {
   if (loading || !child) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#8E59FF" />
+        <ActivityIndicator testID="loading-spinner" size="large" color="#8E59FF" />
       </View>
     );
   }

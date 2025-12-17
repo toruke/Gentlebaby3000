@@ -1,9 +1,22 @@
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc, Timestamp } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+  Timestamp,
+} from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import { Task } from '../models/task';
 
+// 🔁 Helper de conversion
+const toTimestamp = (date?: Date) =>
+  date ? Timestamp.fromDate(date) : undefined;
+
 export const taskService = {
-  // Écouter les tâches d'une famille
   subscribeToFamilyTasks: (
     familyId: string,
     callback: (tasks: Task[]) => void,
@@ -11,8 +24,9 @@ export const taskService = {
   ) => {
     const tasksRef = collection(db, 'family', familyId, 'tasks');
     const q = query(tasksRef, orderBy('createdAt', 'desc'));
-    
-    return onSnapshot(q, 
+
+    return onSnapshot(
+      q,
       (querySnapshot) => {
         const tasks: Task[] = [];
         querySnapshot.forEach((doc) => {
@@ -26,31 +40,54 @@ export const taskService = {
       errorCallback,
     );
   },
-  // Créer une nouvelle tâche
-  createTask: async (familyId: string, taskData: Omit<Task, 'id' | 'createdAt'>): Promise<string> => {
-    const tasksRef = collection(db, 'family', familyId, 'tasks');
-    const docRef = await addDoc(tasksRef, {
+
+  // ✅ CONTRAT CORRECT
+  createTask: async (
+    familyId: string,
+    taskData: {
+      startDateTime?: Date;
+      nextOccurrence?: Date;
+    } & Omit<Task, 'id' | 'createdAt' | 'startDateTime' | 'nextOccurrence'>,
+  ): Promise<string> => {
+
+    const firestoreTask: Omit<Task, 'id'> = {
       ...taskData,
-      createdAt: Timestamp.now(), // Utilise le timestamp du serveur
-    });
+      startDateTime: toTimestamp(taskData.startDateTime),
+      nextOccurrence: toTimestamp(taskData.nextOccurrence),
+      createdAt: Timestamp.now(),
+    };
+
+    const docRef = await addDoc(
+      collection(db, 'family', familyId, 'tasks'),
+      firestoreTask,
+    );
+
     return docRef.id;
   },
 
-  // Supprimer une tâche
   deleteTask: async (familyId: string, taskId: string): Promise<void> => {
-    const taskRef = doc(db, 'family', familyId, 'tasks', taskId);
-    await deleteDoc(taskRef);
+    await deleteDoc(doc(db, 'family', familyId, 'tasks', taskId));
   },
 
-  // Mettre à jour le statut
-  updateTaskStatus: async (familyId: string, taskId: string, status: Task['Status']): Promise<void> => {
-    const taskRef = doc(db, 'family', familyId, 'tasks', taskId);
-    await updateDoc(taskRef, { Status: status });
+  updateTaskStatus: async (
+    familyId: string,
+    taskId: string,
+    status: Task['Status'],
+  ): Promise<void> => {
+    await updateDoc(
+      doc(db, 'family', familyId, 'tasks', taskId),
+      { Status: status },
+    );
   },
 
-  // Basculer l'état actif/inactif
-  toggleTaskActive: async (familyId: string, taskId: string, currentActive: boolean): Promise<void> => {
-    const taskRef = doc(db, 'family', familyId, 'tasks', taskId);
-    await updateDoc(taskRef, { Active: !currentActive });
+  toggleTaskActive: async (
+    familyId: string,
+    taskId: string,
+    currentActive: boolean,
+  ): Promise<void> => {
+    await updateDoc(
+      doc(db, 'family', familyId, 'tasks', taskId),
+      { Active: !currentActive },
+    );
   },
 };

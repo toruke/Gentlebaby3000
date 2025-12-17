@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.EXPO_PUBLIC_RESEND_API_KEY);
 
 export async function sendInvitationEmail(
   recipientEmail: string,
@@ -34,8 +34,9 @@ export async function sendInvitationEmail(
         </div>
       `,
     });
+    console.log('✅ Email envoyé avec succès');
   } catch (error) {
-    console.error('Erreur envoi email:', error);
+    console.error('❌ Erreur envoi email:', error);
     throw new Error('Impossible d\'envoyer l\'email d\'invitation');
   }
 }

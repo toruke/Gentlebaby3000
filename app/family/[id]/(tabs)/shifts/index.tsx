@@ -1,2 +1,2 @@
-import ShiftsScreen from '@/src/screens/family/familyShiftScreen';
-export default ShiftsScreen ;
+import GuardPlanningScreen from '@/src/screens/family/familyShiftScreen';
+export default GuardPlanningScreen;
