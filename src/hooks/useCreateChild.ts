@@ -7,7 +7,9 @@ import { useChild } from './useChild';
 
 export const useCreateChildForm = () => {
   // Récupération de l'ID de la famille depuis l'URL (ex: /family/123/add-child)
-  const { id: familyId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  // Si le dossier s'appelle [id], alors familyId se trouve dans params.id
+  const familyId = params.id;
 
   const router = useRouter();
 

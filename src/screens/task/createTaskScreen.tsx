@@ -1,4 +1,4 @@
-// src/screens/family/task/createTaskScreen.tsx (ou index.tsx selon ta route)
+// src/screens/task/createTaskScreen.tsx
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 
 // Imports personnalisés
-import { MemberSelector } from '../../components/task/memberSelector'; // CHEMIN À VÉRIFIER
-import { useCreateTask } from '../../hooks/useCreateTask'; // CHEMIN À VÉRIFIER
+import { MemberSelector } from '../../components/task/memberSelector';
+import { useCreateTask } from '../../hooks/useCreateTask';
 
 
 export default function CreateTaskScreen() {
