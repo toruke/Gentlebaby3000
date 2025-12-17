@@ -1,5 +1,5 @@
-// src/screens/GuardPlanningScreen.tsx
-import { useLocalSearchParams } from 'expo-router'; // 👈 Import essentiel pour Expo Router
+// src/screens/family/familyShiftScreen.tsx
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,10 +10,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+// 👇 AJOUT : Imports Firebase pour charger les membres
+import { collection, getDocs } from 'firebase/firestore'; 
+import { db } from '../../../config/firebaseConfig';
+
 import { PlanningSlot } from '../../models/planning';
 import { getPlanningSlots } from '../../services/planning';
 import { PlanningMode, getRangeForMode } from '../../utils/planningRange';
-// import { useAuth } from '../../context/AuthContext'; // 👈 Décommente si tu as un contexte d'auth
 
 const COLORS = {
   primary: '#6C63FF',
@@ -25,36 +28,22 @@ const COLORS = {
   accent: '#E1E8FF',
 };
 
+// 👇 ADAPTATION : Le modèle correspond à votre DB
 type FamilyMember = {
   memberId: string;
-  firstName: string;
-  lastName: string;
+  displayName: string; // On utilise displayName au lieu de firstName/lastName
 };
 
-// ❌ On supprime "Props" car le Router n'envoie pas de props directement
-// type Props = { ... };
-
-// ✅ On retire "export" ici pour le mettre en default à la fin
 const GuardPlanningScreen: React.FC = () => {
-  // 1. Récupération de l'ID via l'URL
   const localParams = useLocalSearchParams();
-  const familyId = typeof localParams.id === 'string' ? localParams.id : '';
+  const router = useRouter();
+  
+  // Sécurisation de l'ID
+  const rawId = localParams.id || localParams.familyId;
+  const familyId = typeof rawId === 'string' ? rawId : '';
 
-  // 2. Récupération des données utilisateur/membres
-  // ⚠️ TODO: Remplace ceci par ton vrai hook de contexte (ex: useAuth() ou useFamily())
-  // Pour l'instant, je mets des valeurs par défaut pour éviter le crash
-  const [familyMembers] = useState<FamilyMember[]>([]);
-
-  // Optionnel : Charger les membres si tu n'as pas de contexte global
-  /*
-  useEffect(() => {
-     if(familyId) {
-        // Appeler un service pour charger les membres de la famille
-        // getFamilyMembers(familyId).then(setFamilyMembers);
-     }
-  }, [familyId]);
-  */
-
+  // États
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [mode, setMode] = useState<PlanningMode>('24H');
   const [selectedDate] = useState<Date>(new Date());
   const [selectedMemberId, setSelectedMemberId] = useState<string | undefined>();
@@ -62,17 +51,44 @@ const GuardPlanningScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 1. CHARGEMENT DES MEMBRES (Corrige le problème des filtres vides)
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!familyId) return;
+      try {
+        // On vise la sous-collection : family -> [ID] -> members
+        const membersRef = collection(db, 'family', familyId, 'members');
+        const snapshot = await getDocs(membersRef);
+        
+        const members = snapshot.docs.map(doc => ({
+          memberId: doc.id,
+          displayName: doc.data().displayName || 'Membre',
+        }));
+        
+        setFamilyMembers(members);
+      } catch (err) {
+        console.error('Erreur chargement membres:', err);
+      }
+    };
+    
+    fetchMembers();
+  }, [familyId]);
+
+  // 2. Reset filtre si on change de famille
   useEffect(() => {
     setSelectedMemberId(undefined);
   }, [familyId]);
 
+  // 3. Chargement des Créneaux
   const loadSlots = useCallback(async () => {
-    if (!familyId) return; // Sécurité si l'ID n'est pas encore chargé
+    if (!familyId) return;
 
     try {
       setLoading(true);
       setError(null);
       const { from, to } = getRangeForMode(mode, selectedDate);
+      
+      // Attention : Assurez-vous que getPlanningSlots pointe vers la même collection que AddPlanning
       const result = await getPlanningSlots({
         familyId,
         from,
@@ -82,15 +98,17 @@ const GuardPlanningScreen: React.FC = () => {
       setSlots(result);
     } catch (e: unknown) {
       console.error('ERREUR:', e);
-      setError('Erreur : ' + (e instanceof Error ? e.message : 'Inconnue'));
+      setError('Erreur chargement planning');
     } finally {
       setLoading(false);
     }
   }, [familyId, mode, selectedDate, selectedMemberId]);
 
   useEffect(() => {
-    void loadSlots();
-  }, [loadSlots]);
+    loadSlots();
+  }, [loadSlots]); // On recharge quand loadSlots change
+
+  // --- RENDUS ---
 
   const renderModeButton = (label: string, value: PlanningMode) => {
     const isSelected = mode === value;
@@ -112,15 +130,16 @@ const GuardPlanningScreen: React.FC = () => {
       >
         <Text style={[styles.avatarText, !selectedMemberId && styles.avatarTextSelected]}>Tous</Text>
       </TouchableOpacity>
-      {/* On vérifie que familyMembers existe avant de map */}
-      {familyMembers && familyMembers.map((m) => (
+      
+      {/* On utilise m.displayName ici */}
+      {familyMembers.map((m) => (
         <TouchableOpacity
           key={m.memberId}
           onPress={() => setSelectedMemberId(m.memberId)}
           style={[styles.avatarChip, selectedMemberId === m.memberId && styles.avatarChipSelected]}
         >
           <Text style={[styles.avatarText, selectedMemberId === m.memberId && styles.avatarTextSelected]}>
-            {m.firstName}
+            {m.displayName.split(' ')[0]} {/* On affiche juste le prénom pour gagner de la place */}
           </Text>
         </TouchableOpacity>
       ))}
@@ -130,13 +149,12 @@ const GuardPlanningScreen: React.FC = () => {
   const renderItem = ({ item, index }: { item: PlanningSlot, index: number }) => {
     const start = item.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const end = item.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    const name = `${item.firstName || ''} ${item.lastName || ''}`;
-
+    const name = `${item.firstName} ${item.lastName}`; // Ici ça reste firstName/Lastname car ça vient du slot enregistré
+    
+    // Logique d'affichage des jours (inchangée)
     const currentDay = item.startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     const prevItem = slots[index - 1];
     const prevDay = prevItem ? prevItem.startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : null;
-
     const showDayHeader = currentDay !== prevDay;
     const capitalizedDay = currentDay.charAt(0).toUpperCase() + currentDay.slice(1);
 
@@ -158,14 +176,7 @@ const GuardPlanningScreen: React.FC = () => {
             <View style={styles.infoContainer}>
               <Text style={styles.memberName}>{name}</Text>
               <Text style={styles.roleText}>Garde bébé</Text>
-              <Text style={styles.cardMiniDate}>{capitalizedDay}</Text>
             </View>
-          </View>
-
-          <View style={styles.cardActions}>
-            <TouchableOpacity style={[styles.actionButton, styles.btnFilled]}>
-              <Text style={styles.btnTextFilled}>Mode Relais</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -175,6 +186,10 @@ const GuardPlanningScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        {/* Bouton retour optionnel */}
+        <TouchableOpacity onPress={() => router.back()} style={{marginBottom: 10}}>
+          <Text style={{color: COLORS.primary}}>← Retour Menu</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Planning de garde</Text>
         <Text style={styles.subtitle}>
           {selectedDate.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -192,9 +207,11 @@ const GuardPlanningScreen: React.FC = () => {
 
       {loading && <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />}
       {error && <Text style={styles.errorText}>{error}</Text>}
+      
       {!loading && slots.length === 0 && !error && (
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>💤 Aucun créneau planifié</Text>
+          <Text style={{color:'#999', marginTop:5}}>Vérifiez que vos services utilisent la même collection 'plannings'.</Text>
         </View>
       )}
 
@@ -208,7 +225,14 @@ const GuardPlanningScreen: React.FC = () => {
 
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => { }}
+        onPress={() => {
+          // Navigation vers l'ajout
+          // Adaptez le chemin si nécessaire
+          router.push({
+            pathname: '/family/[id]/shift', 
+            params: { id: familyId, familyId: familyId },
+          });
+        }}
       >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
@@ -217,11 +241,11 @@ const GuardPlanningScreen: React.FC = () => {
   );
 };
 
-// ... (Garder les styles tels quels)
+// ... STYLES (Gardez vos styles existants)
 const styles = StyleSheet.create({
   // --- STYLES GLOBAUX ---
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingHorizontal: 20, paddingTop: 20, marginBottom: 10 },
+  header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 10 },
   title: { fontSize: 28, fontWeight: '800', color: COLORS.textDark },
   subtitle: { fontSize: 16, color: COLORS.textLight, marginTop: 4, textTransform: 'capitalize' },
 
@@ -357,5 +381,4 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ EXPORT PAR DÉFAUT (Crucial pour ton router)
 export default GuardPlanningScreen;
