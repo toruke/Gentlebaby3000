@@ -6,32 +6,17 @@ import { useEffect, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
 import { db } from '../../config/firebaseConfig';
-import { TaskStatus, TaskType, Tutor } from '../models/task'; // Assure-toi que ce chemin est bon
+import { TaskType, Tutor } from '../models/task';
 import { createNotification } from '../services/notificationService';
-import { taskService } from '../services/taskService';
+// 1. IMPORT DU TYPE 'CreateTaskPayload' DEPUIS LE SERVICE
+import { taskService, CreateTaskPayload } from '../services/taskService';
 
-// Interfaces locales
+// Interface pour les erreurs de formulaire uniquement
 export interface FormErrors {
   taskName?: string;
   members?: string;
   interval?: string;
   fixedTimes?: string;
-}
-
-interface CreateTaskData {
-  Name: string;
-  Icon: string;
-  Type: TaskType;
-  Active: boolean;
-  Status: TaskStatus;
-  Tolerance: number;
-  Validation: boolean;
-  assignedMembers: string[];
-  startDateTime?: Date;
-  nextOccurrence?: Date;
-  fixedTimes?: string[];
-  comments?: string;
-  evaluation?: number;
 }
 
 export const useCreateTask = (familyId: string | undefined) => {
@@ -62,7 +47,6 @@ export const useCreateTask = (familyId: string | undefined) => {
 
       try {
         setLoading(true);
-
         let querySnapshot = await getDocs(collection(db, 'family', familyId, 'members'));
 
         if (querySnapshot.empty) {
@@ -100,7 +84,6 @@ export const useCreateTask = (familyId: string | undefined) => {
         ? prev.filter(id => id !== memberId)
         : [...prev, memberId],
     );
-    // Nettoyer l'erreur si sélectionné
     if (errors.members) setErrors(prev => ({ ...prev, members: undefined }));
   };
 
@@ -136,6 +119,7 @@ export const useCreateTask = (familyId: string | undefined) => {
     if (taskType === 'recurring') {
       const intervalNum = parseInt(interval, 10);
       const nextDate = new Date(startDateTime);
+      if (isNaN(nextDate.getTime())) return new Date();
 
       while (nextDate <= now) {
         nextDate.setHours(nextDate.getHours() + intervalNum);
@@ -146,9 +130,8 @@ export const useCreateTask = (familyId: string | undefined) => {
     if (taskType === 'temporal') {
       const times = fixedTimes.split(',').map(t => t.trim()).filter(t => t);
       const today = new Date();
-      const currentHourMin = today.toTimeString().substring(0, 5);
+      const currentHourMin = today.getHours().toString().padStart(2, '0') + ':' + today.getMinutes().toString().padStart(2, '0');
 
-      // Trier les heures pour être sûr
       times.sort();
 
       for (const fixedTime of times) {
@@ -160,12 +143,13 @@ export const useCreateTask = (familyId: string | undefined) => {
         }
       }
 
-      // Si aucune heure trouvée aujourd'hui, prendre la première de demain
-      const [hours, minutes] = times[0].split(':').map(Number);
-      const nextDate = new Date(today);
-      nextDate.setDate(today.getDate() + 1);
-      nextDate.setHours(hours, minutes, 0, 0);
-      return nextDate;
+      if (times.length > 0) {
+        const [hours, minutes] = times[0].split(':').map(Number);
+        const nextDate = new Date(today);
+        nextDate.setDate(today.getDate() + 1);
+        nextDate.setHours(hours, minutes, 0, 0);
+        return nextDate;
+      }
     }
 
     return startDateTime;
@@ -185,43 +169,54 @@ export const useCreateTask = (familyId: string | undefined) => {
     try {
       setIsSubmitting(true);
 
-      const createTaskData: CreateTaskData = {
+      const nextOcc = calculateNextOccurrence();
+      
+      // 2. UTILISATION DU TYPE 'CreateTaskPayload'
+      // Grâce au 'Omit' dans le service, cet objet correspond parfaitement
+      const taskPayload: CreateTaskPayload = {
         Name: taskName.trim(),
         Icon: taskIcon,
         Type: taskType,
         Active: true,
-        Status: 'pending' as TaskStatus,
+        Status: 'pending',
         Tolerance: 0,
         Validation: false,
         assignedMembers: responsibleMembers,
-        nextOccurrence: calculateNextOccurrence(),
+        // Sécurité : fallback sur Date() si calcul invalide
+        nextOccurrence: isNaN(nextOcc.getTime()) ? new Date() : nextOcc,
       };
 
+      // 3. REMPLISSAGE CONDITIONNEL (TypeScript accepte car ces champs sont optionnels dans le type)
       if (taskType === 'recurring') {
-        createTaskData.Tolerance = parseInt(interval, 10);
-        createTaskData.startDateTime = startDateTime;
+        taskPayload.Tolerance = parseInt(interval, 10) || 0;
+        taskPayload.startDateTime = startDateTime;
       }
 
       if (taskType === 'temporal') {
-        createTaskData.fixedTimes = fixedTimes.split(',').map(t => t.trim()).filter(t => t);
+        taskPayload.fixedTimes = fixedTimes.split(',').map(t => t.trim()).filter(t => t);
       }
 
       if (taskType === 'event') {
-        createTaskData.comments = comments.trim();
-        createTaskData.evaluation = evaluation;
-        createTaskData.startDateTime = startDateTime;
+        taskPayload.comments = comments.trim();
+        taskPayload.evaluation = evaluation;
+        taskPayload.startDateTime = startDateTime;
       }
 
-      const taskId = await taskService.createTask(familyId, createTaskData);
+      console.log('🚀 Envoi au service:', taskPayload);
 
-      // 🔔 NOTIFICATION : nouvelle tâche créée
-      await createNotification({
-        familyId,
-        sourceId: taskId,
-        type: 'task_start',
-        title: 'Nouvelle tâche créée',
-        message: `La tâche "${taskName}" a été créée`,
-      });
+      const taskId = await taskService.createTask(familyId, taskPayload);
+
+      try {
+        await createNotification({
+          familyId,
+          sourceId: taskId,
+          type: 'task_start',
+          title: 'Nouvelle tâche',
+          message: `Nouvelle tâche créée : ${taskName}`,
+        });
+      } catch (e) {
+        console.log('Note: Erreur notification ignorée');
+      }
 
       Alert.alert('Succès', 'Tâche créée avec succès !', [
         { text: 'OK', onPress: () => router.back() },
@@ -241,7 +236,6 @@ export const useCreateTask = (familyId: string | undefined) => {
     }
   };
 
-  // Helper pour nettoyer les erreurs lors de la saisie
   const handleTextChange = (
     setter: React.Dispatch<React.SetStateAction<string>>,
     errorKey?: keyof FormErrors,
@@ -253,10 +247,8 @@ export const useCreateTask = (familyId: string | undefined) => {
   };
 
   return {
-    // Values
     taskName, taskIcon, responsibleMembers, taskType, interval, startDateTime, fixedTimes, comments, evaluation,
     availableTutors, loading, isSubmitting, errors, showDatePicker,
-    // Setters & Actions
     setTaskName, setTaskIcon, setTaskType, setInterval, setFixedTimes, setComments, setEvaluation, setShowDatePicker,
     handleTextChange, toggleMember, onDateChange, submit,
   };

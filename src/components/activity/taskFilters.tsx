@@ -72,14 +72,14 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
 const styles = StyleSheet.create({
   filterSection: {
     backgroundColor: '#fff',
-    padding: 15,
-    marginTop: 10,
+    padding: 10,
+    marginTop: 0,
   },
   filterLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#666',
-    marginBottom: 10,
+    marginBottom: 3,
   },
   filterButtons: {
     flexDirection: 'row',
@@ -87,9 +87,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+    paddingVertical: 7,
+    paddingHorizontal: 6,
+    borderRadius: 10,
     backgroundColor: '#f0f0f0',
     borderWidth: 1,
     borderColor: '#e0e0e0',

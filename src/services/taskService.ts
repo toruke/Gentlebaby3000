@@ -1,3 +1,4 @@
+// src/services/taskService.ts
 import {
   addDoc,
   collection,
@@ -8,13 +9,27 @@ import {
   query,
   updateDoc,
   Timestamp,
+  DocumentData,
 } from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import { Task } from '../models/task';
 
-// 🔁 Helper de conversion
-const toTimestamp = (date?: Date) =>
-  date ? Timestamp.fromDate(date) : undefined;
+// --- DEFINITION DES TYPES ---
+
+// 1. On définit ce que le Service attend en entrée (DTO - Data Transfer Object)
+// On prend tout 'Task', on enlève les champs générés (id, createdAt) 
+// et on redéfinit les dates pour accepter du JS 'Date' au lieu de 'Timestamp'
+export type CreateTaskPayload = Omit<Task, 'id' | 'createdAt' | 'startDateTime' | 'nextOccurrence'> & {
+  startDateTime?: Date | null;
+  nextOccurrence?: Date | null;
+};
+
+// 2. Helper de conversion typé
+const toTimestamp = (date?: Date | Timestamp | null): Timestamp | null => {
+  if (!date) return null;
+  if (date instanceof Timestamp) return date;
+  return Timestamp.fromDate(date);
+};
 
 export const taskService = {
   subscribeToFamilyTasks: (
@@ -41,28 +56,46 @@ export const taskService = {
     );
   },
 
-  // ✅ CONTRAT CORRECT
+  // ✅ FONCTION TYPÉE (Plus de any)
   createTask: async (
     familyId: string,
-    taskData: {
-      startDateTime?: Date;
-      nextOccurrence?: Date;
-    } & Omit<Task, 'id' | 'createdAt' | 'startDateTime' | 'nextOccurrence'>,
+    taskData: CreateTaskPayload, 
   ): Promise<string> => {
+    try {
+      // 1. On sépare les dates du reste pour les convertir proprement
+      const { startDateTime, nextOccurrence, ...rest } = taskData;
 
-    const firestoreTask: Omit<Task, 'id'> = {
-      ...taskData,
-      startDateTime: toTimestamp(taskData.startDateTime),
-      nextOccurrence: toTimestamp(taskData.nextOccurrence),
-      createdAt: Timestamp.now(),
-    };
+      // 2. On construit l'objet brut avec les Timestamps
+      // Record<string, unknown> permet de manipuler les clés dynamiquement sans 'any'
+      const rawPayload: Record<string, unknown> = {
+        ...rest,
+        startDateTime: toTimestamp(startDateTime) ?? null,
+        nextOccurrence: toTimestamp(nextOccurrence) ?? null,
+        createdAt: Timestamp.now(),
+      };
 
-    const docRef = await addDoc(
-      collection(db, 'family', familyId, 'tasks'),
-      firestoreTask,
-    );
+      // 3. NETTOYAGE (Type-safe)
+      // On recrée un objet en filtrant ceux qui sont undefined
+      const cleanPayload = Object.entries(rawPayload).reduce((acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as DocumentData); // On dit à TS que le résultat est compatible Firestore
 
-    return docRef.id;
+      console.log('📤 Envoi propre à Firestore:', JSON.stringify(cleanPayload, null, 2));
+
+      const docRef = await addDoc(
+        collection(db, 'family', familyId, 'tasks'),
+        cleanPayload,
+      );
+
+      return docRef.id;
+
+    } catch (error) {
+      console.error('🔥 Erreur dans taskService:', error);
+      throw error;
+    }
   },
 
   deleteTask: async (familyId: string, taskId: string): Promise<void> => {

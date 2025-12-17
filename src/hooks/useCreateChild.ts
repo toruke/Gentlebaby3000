@@ -6,15 +6,18 @@ import { isChildAgeValid, validateName } from '../utils/validators';
 import { useChild } from './useChild';
 
 export const useCreateChildForm = () => {
-  // Récupération de l'ID de la famille depuis l'URL (ex: /family/123/add-child)
   const params = useLocalSearchParams();
-  // Si le dossier s'appelle [id], alors familyId se trouve dans params.id
-  const familyId = params.id;
+  
+  // 1. AJOUTEZ CE LOG pour voir ce qui arrive vraiment
+  console.log('PARAMS REÇUS :', params); 
+
+  // 2. Tentez de récupérer l'ID, peu importe le nom du paramètre (id ou familyId)
+  // Cela permet d'éviter l'erreur si vous changez le nom du dossier plus tard
+  const familyId = typeof params.id === 'string' ? params.id : 
+    typeof params.familyId === 'string' ? params.familyId : null;
 
   const router = useRouter();
-
   const { createChild, loading } = useChild();
-
   // --- États du formulaire (identique à avant) ---
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -45,9 +48,10 @@ export const useCreateChildForm = () => {
 
     if (!isFormValid) return;
 
-    // Vérification de sécurité
-    if (!familyId || typeof familyId !== 'string') {
-      Alert.alert('Erreur', 'Impossible de retrouver la famille associée.');
+    // 3. Le check de sécurité est maintenant plus clair grâce au log ci-dessus
+    if (!familyId) {
+      console.error('ERREUR CRITIQUE: FamilyId est manquant. Params:', params);
+      Alert.alert('Erreur', 'Impossible de retrouver la famille associée (ID manquant).');
       return;
     }
 

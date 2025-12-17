@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { addChildToFamily } from '../services/childService';
+// 1. On importe le bon nom de fonction depuis votre service
+import { addChildProfile } from '@/src/services/childService'; 
 import { CreateChildRequest } from '../models/child';
 
 export const useChild = () => {
@@ -9,13 +10,28 @@ export const useChild = () => {
   const createChild = async (familyId: string, childData: CreateChildRequest) => {
     setLoading(true);
     setError(null);
+    
     try {
-      const childId = await addChildToFamily(familyId, childData);
+      // 2. On transforme les données pour qu'elles correspondent à ce que veut addChildProfile
+      // Le formulaire envoie "birthday", le service veut "birthDate"
+      const serviceData = {
+        firstName: childData.firstName,
+        lastName: childData.lastName,
+        gender: childData.gender,
+        birthDate: childData.birthday, // ⚠️ Mapping important ici
+        photoUri: undefined, // Vous pourrez ajouter la photo plus tard si le formulaire le permet
+        device: null,
+      };
+
+      // 3. On appelle la bonne fonction
+      const childId = await addChildProfile(familyId, serviceData);
+      
       return childId;
+
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur lors de la création de l\'enfant';
-      setError(message);
-      throw err; // On renvoie l'erreur pour que le formulaire puisse afficher une alerte
+      console.error('Erreur hook createChild:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      throw err;
     } finally {
       setLoading(false);
     }
